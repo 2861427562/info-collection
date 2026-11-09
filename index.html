@@ -678,17 +678,23 @@ function refresh(){
   updateSelBar();
 }
 
-function goList(){
+function showList(){
   document.getElementById("view-detail").style.display="none";
   document.getElementById("view-stats").style.display="none";
   document.getElementById("view-dups").style.display="none";
   document.getElementById("view-list").style.display="block";
   refresh();
-  window.scrollTo(0,0);
 }
+function pushView(v){ try{ history.pushState({v:v}, ""); }catch(e){} }
+function goList(){
+  if(history.state && history.state.v){ history.back(); }
+  else { showList(); window.scrollTo(0,0); }
+}
+window.addEventListener("popstate", ()=>{ showList(); window.scrollTo(0,0); });
 
 function openDetail(d){
   curIdx = DATA.indexOf(d);
+  pushView("detail");
   document.getElementById("view-list").style.display="none";
   document.getElementById("view-stats").style.display="none";
   document.getElementById("view-detail").style.display="block";
@@ -978,6 +984,7 @@ function renderStats(){
   body.appendChild(statBlock("按年份","年份"));
 }
 document.getElementById("stats").onclick=()=>{
+  pushView("stats");
   document.getElementById("view-list").style.display="none";
   document.getElementById("view-detail").style.display="none";
   document.getElementById("view-stats").style.display="block";
@@ -1026,6 +1033,7 @@ function renderDups(){
   });
 }
 document.getElementById("dups").onclick=()=>{
+  pushView("dups");
   document.getElementById("view-list").style.display="none";
   document.getElementById("view-detail").style.display="none";
   document.getElementById("view-stats").style.display="none";
