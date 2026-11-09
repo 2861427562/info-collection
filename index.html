@@ -65,6 +65,20 @@ h1{font-size:18px;margin:0}
 .item.swiping{transition:none}
 .item.snap{transition:transform .18s ease}
 .morebtn{display:inline-block;margin:12px 0 4px;border:1px solid var(--line);background:var(--chip);color:var(--acc);padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer}
+.gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px}
+.gate.hide{display:none}
+.gatebox{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px}
+.gatebox h2{margin:0 0 6px;font-size:18px}
+.gatebox .sub{color:var(--dim);font-size:13px;margin-bottom:16px}
+.gatebox input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-size:15px;outline:none}
+.gatebox button{width:100%;margin-top:12px;padding:11px;border:none;border-radius:10px;background:var(--acc);color:#0c0e12;font-weight:700;font-size:15px;cursor:pointer}
+.gatebox .err{color:var(--danger);font-size:13px;margin-top:10px;min-height:18px}
+.gatebox .hint{color:var(--dim);font-size:12px;margin-top:14px;line-height:1.6}
+.ro #add,.ro #import,.ro #reset,.ro #multi,.ro #dups,
+.ro #d-edit,.ro #d-del,.ro #d-note-save,.ro .addimg,
+.ro .imgs .x,.ro .imgs .ctl,.ro .expand .acts,.ro .badge.pr{display:none!important}
+.romode{font-size:12px;color:var(--dim);margin-top:4px}
+.romode b{color:var(--acc);cursor:pointer}
 
 .badge.dup{color:#0e0f13;background:var(--dup);font-weight:700}
 .expand{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;cursor:default}
@@ -150,6 +164,16 @@ h1{font-size:18px;margin:0}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <div class="gatebox">
+    <h2>信息收集</h2>
+    <div class="sub">输入观看口令进入</div>
+    <input id="pw" type="password" placeholder="观看口令" autocomplete="current-password">
+    <button id="pw-go">进入</button>
+    <div class="err" id="pw-err"></div>
+    <div class="hint">只有观看口令时是<b>只读</b>的：改、删、上传、多选这些入口不会出现。<br>想改内容，另外输入修改口令。</div>
+  </div>
+</div>
 <div class="wrap" id="view-list">
   <header>
     <div class="toprow">
@@ -171,6 +195,7 @@ h1{font-size:18px;margin:0}
         <button id="add">新增</button>
         <button id="export">导出 CSV</button>
         <button id="reset">重置</button>
+        <button id="unlock">解锁修改</button>
       </div>
     </div>
     <div class="count" id="count"></div>
@@ -354,36 +379,33 @@ function setStatus(kind, msg){
   el.textContent = msg || (kind==="ok" ? "已同步云端" : kind==="busy" ? "同步中…" : "离线");
 }
 
-async function sbJson(url, opt){
-  const r=await fetch(url, opt);
-  if(!r.ok){ const t=await r.text(); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
-  return r.json();
+let PW_VIEW = sessionStorage.getItem("pw_view")||"";
+let PW_EDIT = sessionStorage.getItem("pw_edit")||"";
+let CAN_EDIT = false;
+
+async function rpc(fn, body){
+  const r=await fetch(SB_URL+"/rest/v1/rpc/"+fn, {method:"POST", headers:SB_H, body:JSON.stringify(body||{})});
+  if(!r.ok){ const t=await r.text(); const e=new Error(t.slice(0,160)); e.status=r.status; throw e; }
+  const txt=await r.text();
+  return txt ? JSON.parse(txt) : null;
 }
 async function loadCloud(){
   let all=[], off=0;
   for(;;){
-    const page=await sbJson(SB_URL+"/rest/v1/items?select=id,data&order=id.asc&limit=1000&offset="+off, {headers:SB_H});
-    all=all.concat(page);
-    if(page.length<1000) break;
+    const page=await rpc("view_items",{pw:PW_VIEW, off:off, lim:1000});
+    all=all.concat(page||[]);
+    if(!page || page.length<1000) break;
     off+=page.length;
-    if(off>30000) break;
+    if(off>50000) break;
   }
   return all;
 }
-async function sbUpsertRows(rows){
-  const r=await fetch(SB_URL+"/rest/v1/items", {
-    method:"POST",
-    headers:Object.assign({}, SB_H, {"Prefer":"resolution=merge-duplicates,return=minimal"}),
-    body:JSON.stringify(rows)
-  });
-  if(!r.ok){ const t=await r.text(); throw new Error("upsert "+r.status+" "+t.slice(0,120)); }
-}
+async function sbUpsertRows(rows){ await rpc("edit_items",{pw:PW_EDIT, op:"upsert", payload:rows}); }
 async function sbDeleteIds(ids){
   if(!ids.length) return;
-  const q=ids.map(i=>'"'+i+'"').join(",");
-  const r=await fetch(SB_URL+"/rest/v1/items?id=in.("+q+")", {method:"DELETE", headers:Object.assign({}, SB_H, {"Prefer":"return=minimal"})});
-  if(!r.ok){ const t=await r.text(); throw new Error("delete "+r.status+" "+t.slice(0,120)); }
+  await rpc("edit_items",{pw:PW_EDIT, op:"delete", payload:ids});
 }
+async function sbDeleteAll(){ await rpc("edit_items",{pw:PW_EDIT, op:"delete_all", payload:[]}); }
 async function seedAll(list){
   for(let i=0;i<list.length;i+=100){
     const chunk=list.slice(i,i+100).map(d=>{ if(!d._id) d._id=newId(); return {id:d._id, data:stripId(d)}; });
@@ -464,6 +486,7 @@ function attachSwipe(el, d){
     setTimeout(()=>el.classList.remove("snap"), 220);
     if(!moved) return;
     suppressClick=Date.now()+500;
+    if(!CAN_EDIT) return;
     if(dx<-70){ doDelete([d]); }
     else if(dx>70){ d["进度"]=nextProgress(d["进度"]); commitItems([d]); refresh(); }
     dx=0;
@@ -624,14 +647,14 @@ function refresh(){
     if(d["进度"]){
       const pb=badge(d["进度"],"pr");
       pb.title="点一下切换进度";
-      pb.onclick=e=>{ e.stopPropagation(); d["进度"]=nextProgress(d["进度"]); commitItems([d]); refresh(); };
+      pb.onclick=e=>{ e.stopPropagation(); if(!CAN_EDIT) return; d["进度"]=nextProgress(d["进度"]); commitItems([d]); refresh(); };
       top.appendChild(pb);
     }
     else {
       const pb=badge("＋进度","pr");
       pb.title="点一下设进度";
       pb.style.opacity="0.55";
-      pb.onclick=e=>{ e.stopPropagation(); d["进度"]=nextProgress(""); commitItems([d]); refresh(); };
+      pb.onclick=e=>{ e.stopPropagation(); if(!CAN_EDIT) return; d["进度"]=nextProgress(""); commitItems([d]); refresh(); };
       top.appendChild(pb);
     }
     if(d.images && d.images.length) top.appendChild(badge("图×"+d.images.length,""));
@@ -714,6 +737,7 @@ function renderDetail(d){
   for(let i=1;i<=5;i++){
     const s=document.createElement("span"); s.className=(i<=(d["评分"]||0)?"":"off"); s.textContent="★";
     s.onclick=()=>{
+      if(!CAN_EDIT) return;
       const nv=document.getElementById("d-note");
       if(nv && curIdx>=0 && DATA[curIdx]) d["备注"]=nv.value;
       d["评分"]=(d["评分"]===i?0:i);
@@ -762,6 +786,7 @@ document.getElementById("img-file").addEventListener("change",e=>{
 });
 
 function openEdit(d){
+  if(!CAN_EDIT) return;
   editIdx = DATA.indexOf(d);
   document.getElementById("e-title").textContent = "编辑条目";
   document.getElementById("e-name").value = d["名字"]||"";
@@ -778,6 +803,7 @@ function openEdit(d){
 }
 let newDraft=null;
 function openNew(){
+  if(!CAN_EDIT) return;
   newDraft={名字:"",类型:"",平台:"",进度:"",年份:"",标签:[],游戏分类:"","作者/社团":"",内容:"",images:[]};
   DATA.push(newDraft);
   editIdx = DATA.length-1;
@@ -823,6 +849,7 @@ function showUndo(label){
 function hideToast(){ document.getElementById("toast").classList.remove("on"); }
 
 function doDelete(items){
+  if(!CAN_EDIT) return;
   const entries=items.map(o=>({obj:o, idx:DATA.indexOf(o)})).filter(e=>e.idx>=0).sort((a,b)=>a.idx-b.idx);
   if(!entries.length) return;
   entries.slice().reverse().forEach(e=>DATA.splice(e.idx,1));
@@ -838,7 +865,7 @@ function doDelete(items){
   showUndo(entries.length>1 ? "已删除 "+entries.length+" 条" : "已删除「"+(entries[0].obj["名字"]||"")+"」");
 }
 function undoDelete(){
-  if(!undo) return;
+  if(!undo || !CAN_EDIT) return;
   clearTimeout(undo.timer);
   const objs=undo.entries.sort((a,b)=>a.idx-b.idx).map(e=>{ DATA.splice(Math.min(e.idx, DATA.length), 0, e.obj); return e.obj; });
   undo=null; hideToast();
@@ -854,6 +881,7 @@ function rebuildAll(){
 }
 document.getElementById("d-edit").onclick=()=>openEdit(DATA[curIdx]);
 document.getElementById("d-note-save").onclick=()=>{
+  if(!CAN_EDIT) return;
   const d=DATA[curIdx]; if(!d) return;
   d["备注"]=document.getElementById("d-note").value.trim();
   commitItems([d]); renderDetail(d);
@@ -866,6 +894,7 @@ document.getElementById("editmodal").addEventListener("click",e=>{ if(e.target.i
 
 /* ---- 多选 ---- */
 document.getElementById("multi").onclick=()=>{
+  if(!CAN_EDIT) return;
   state.multi=!state.multi;
   if(!state.multi) sel.clear();
   updateSelBar(); refresh();
@@ -995,6 +1024,7 @@ function renderDups(){
     });
     const btn=document.createElement("button"); btn.className="delbtn"; btn.textContent="保留选中的，删掉其余";
     btn.onclick=()=>{
+      if(!CAN_EDIT) return;
       const keep=g[pick];
       const drop=g.filter(d=>d!==keep);
       if(!drop.length) return;
@@ -1034,6 +1064,7 @@ function parseCSV(text){
   return rows;
 }
 function doImport(text){
+  if(!CAN_EDIT) return alert("现在是只读模式，先解锁修改。");
   const rows=parseCSV(text);
   if(rows.length<2) return alert("这个文件里没读到数据行。");
   const head=rows[0].map(h=>h.trim().replace(/^\ufeff/,""));
@@ -1195,19 +1226,61 @@ function exportCSV(){
 }
 document.getElementById("export").onclick=exportCSV;
 document.getElementById("reset").onclick=async()=>{
+  if(!CAN_EDIT) return;
   if(!confirm("清空云端和本地，恢复成最初的 2081 条？云端数据会被删掉。")) return;
   setStatus("busy","清空中…");
-  try{
-    const ids=DATA.map(d=>d._id).filter(Boolean);
-    for(let i=0;i<ids.length;i+=200){ await sbDeleteIds(ids.slice(i,i+200)); }
-  }catch(e){}
+  try{ await sbDeleteAll(); }catch(e){}
   localStorage.removeItem(PKEY);
   location.reload();
 };
 document.getElementById("sort").addEventListener("change",e=>{ state.sort=e.target.value; refresh(); });
 document.getElementById("q").addEventListener("input", e=>{ state.q=e.target.value; state.limit=400; refresh(); });
 
+function applyPerms(){
+  document.body.classList.toggle("ro", !CAN_EDIT);
+  const u=document.getElementById("unlock");
+  if(u) u.style.display = CAN_EDIT ? "none" : "";
+}
+function showGate(msg){
+  document.getElementById("gate").classList.remove("hide");
+  document.getElementById("pw-err").textContent = msg||"";
+  const inp=document.getElementById("pw");
+  inp.value="";
+  setTimeout(()=>inp.focus(),60);
+}
+document.getElementById("pw-go").onclick=async ()=>{
+  const pw=document.getElementById("pw").value.trim();
+  if(!pw) return;
+  document.getElementById("pw-err").textContent="校验中…";
+  try{
+    const rows=await rpc("view_items",{pw:pw, off:0, lim:1});
+    if(Array.isArray(rows)){
+      PW_VIEW=pw; sessionStorage.setItem("pw_view",pw);
+      document.getElementById("gate").classList.add("hide");
+      boot();
+    }else{
+      document.getElementById("pw-err").textContent="口令不对";
+    }
+  }catch(e){
+    document.getElementById("pw-err").textContent="口令不对";
+  }
+};
+document.getElementById("pw").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("pw-go").click(); });
+document.getElementById("unlock").onclick=async ()=>{
+  const pw=prompt("输入修改口令（只在这个标签页有效，关掉就失效）");
+  if(!pw) return;
+  try{
+    const ok=await rpc("check_edit",{pw:pw});
+    if(ok){
+      PW_EDIT=pw; sessionStorage.setItem("pw_edit",pw); CAN_EDIT=true; applyPerms(); refresh();
+    }else{
+      alert("修改口令不对。");
+    }
+  }catch(e){ alert("校验失败："+e.message); }
+};
+
 async function boot(){
+  if(!PW_VIEW){ showGate(); return; }
   let cache=null;
   try{ cache=JSON.parse(localStorage.getItem(PKEY)||"null"); }catch(e){}
   if(cache && cache.length){
@@ -1221,21 +1294,34 @@ async function boot(){
   }
   try{
     const rows=await loadCloud();
-    if(rows.length){
+    if(rows && rows.length){
       DATA=rows.map(r=>{ const d=normItem(r.data||{}); d._id=r.id; return d; });
       setStatus("ok");
     }else{
       if(!DATA.length) DATA=(cache&&cache.length?cache:ORIG).map(normItem);
+      setStatus("busy","初始化云端…");
       await seedAll(DATA);
       setStatus("ok");
     }
+    if(PW_EDIT){
+      try{ CAN_EDIT = await rpc("check_edit",{pw:PW_EDIT}); }catch(e){ CAN_EDIT=false; }
+      if(!CAN_EDIT){ PW_EDIT=""; sessionStorage.removeItem("pw_edit"); }
+    }
   }catch(e){
+    const bad=/bad password/i.test(e.message||"");
+    if(bad && !(cache&&cache.length)){
+      PW_VIEW=""; sessionStorage.removeItem("pw_view");
+      showGate("口令不对");
+      return;
+    }
     if(!DATA.length) DATA=(cache&&cache.length?cache:ORIG).map(normItem);
-    setStatus("err","离线，用的是本地缓存");
+    setStatus("err", bad ? "口令不对，用的是本地缓存" : "离线，用的是本地缓存");
   }
+  document.getElementById("gate").classList.add("hide");
   saveCache();
   rebuildAll();
   autoSnapshot();
+  applyPerms();
   refresh();
 }
 boot();
