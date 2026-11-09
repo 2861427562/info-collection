@@ -41,7 +41,14 @@ h1{font-size:18px;margin:0}
 .badge{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--chip);color:var(--dim);white-space:nowrap}
 .badge.t{color:#7ee0ff}
 .badge.p{color:#c9a7ff}
-.badge.pr{color:#ffd98a}
+.badge.pr{color:#ffd98a;cursor:pointer}
+.badge.pr:hover{background:#3a3423}
+.dupg{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.dupg h4{margin:0 0 8px;font-size:14px;word-break:break-all}
+.dupg .drow{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.dupg .drow .pick{flex:none;margin-top:3px;accent-color:var(--acc)}
+.dupg .drow .fields{flex:1;display:flex;flex-wrap:wrap;gap:6px}
+.dupg .delbtn{margin-top:10px;border:1px solid var(--line);background:var(--chip);color:var(--danger);padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer}
 .badge.dup{color:#0e0f13;background:var(--dup);font-weight:700}
 .expand{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;cursor:default}
 .expand .row{display:flex;gap:10px;padding:2px 0;font-size:13px}
@@ -58,7 +65,7 @@ h1{font-size:18px;margin:0}
 .fab{position:fixed;left:16px;bottom:18px;background:var(--acc);color:#0c0e12;border:none;border-radius:999px;padding:13px 20px;font-size:15px;font-weight:700;box-shadow:0 6px 20px rgba(90,209,240,.35);cursor:pointer;z-index:20}
 .fab:active{transform:scale(.96)}
 .fab.hide{display:none}
-#view-detail,#view-stats{display:none}
+#view-detail,#view-stats,#view-dups{display:none}
 .back{color:var(--acc);cursor:pointer;font-size:14px;margin-bottom:12px;display:inline-block}
 .detail .head{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
 .detail .head .nm{font-size:19px;font-weight:700;word-break:break-all}
@@ -135,7 +142,12 @@ h1{font-size:18px;margin:0}
           <option value="none">默认顺序</option>
           <option value="az">名称 A→Z</option>
           <option value="za">名称 Z→A</option>
+          <option value="progress">按进度</option>
+          <option value="year">按年份（新→旧）</option>
+          <option value="updated">最近改过</option>
         </select>
+        <button id="dups">重复</button>
+        <button id="import">导入</button>
         <button id="stats">统计</button>
         <button id="backup">备份</button>
         <button id="multi">多选</button>
@@ -158,6 +170,14 @@ h1{font-size:18px;margin:0}
   <span class="back" id="stats-back">← 返回列表</span>
   <div id="stats-body"></div>
 </div>
+
+<div class="wrap" id="view-dups">
+  <span class="back" id="dups-back">← 返回列表</span>
+  <div class="count" style="margin-bottom:12px">同一个名字出现多次的，选一条留，其余删掉。</div>
+  <div id="dups-body"></div>
+</div>
+
+<input type="file" id="imp" accept=".csv,text/csv" style="display:none">
 
 <div class="wrap detail" id="view-detail">
   <span class="back" id="back">← 返回列表</span>
@@ -344,7 +364,7 @@ async function flush(){
 }
 function commitItems(items){
   saveCache();
-  (items||[]).forEach(d=>{ if(!d) return; dirty.add(d); if(d._id) tomb.delete(d._id); });
+  (items||[]).forEach(d=>{ if(!d) return; d._upd=Date.now(); dirty.add(d); if(d._id) tomb.delete(d._id); });
   flush();
 }
 function dropItems(objs){
@@ -391,14 +411,37 @@ function filtered(){
   });
 }
 function sortItems(list){
-  if(state.sort==="none") return list;
-  let col;
+  const c=list.slice();
+  if(state.sort==="none") return c;
+  let col=null;
   try{ col = new Intl.Collator("zh-Hans-CN-u-co-pinyin"); }catch(e){ col = null; }
-  return list.slice().sort((a,b)=>{
-    const x=(a["名字"]||"").toLowerCase(), y=(b["名字"]||"").toLowerCase();
-    let c = col ? col.compare(a["名字"], b["名字"]) : (x<y?-1:x>y?1:0);
-    return state.sort==="za" ? -c : c;
-  });
+  if(state.sort==="az"||state.sort==="za"){
+    return c.sort((a,b)=>{
+      const x=(a["名字"]||"").toLowerCase(), y=(b["名字"]||"").toLowerCase();
+      const r = col ? col.compare(a["名字"], b["名字"]) : (x<y?-1:x>y?1:0);
+      return state.sort==="za" ? -r : r;
+    });
+  }
+  if(state.sort==="progress"){
+    return c.sort((a,b)=> String(a["进度"]||"zz").localeCompare(String(b["进度"]||"zz"),"zh"));
+  }
+  if(state.sort==="year"){
+    return c.sort((a,b)=> (parseInt(b["年份"],10)||0)-(parseInt(a["年份"],10)||0));
+  }
+  if(state.sort==="updated"){
+    return c.sort((a,b)=> (b._upd||0)-(a._upd||0));
+  }
+  return c;
+}
+
+function nextProgress(cur){
+  if(cur==="未看") return "已看";
+  if(cur==="已看") return "未看";
+  if(cur==="未收集") return "已收集";
+  if(cur==="已收集") return "未收集";
+  const ring=["未玩","玩着","已玩","不想玩"];
+  const i=ring.indexOf(cur||"");
+  return ring[(i+1)%ring.length];
 }
 
 function badge(text, cls){
@@ -478,7 +521,19 @@ function refresh(){
     if(dup) top.appendChild(badge("重复×"+cnt,"dup"));
     if(d["类型"]) top.appendChild(badge(d["类型"],"t"));
     if(d["平台"]) top.appendChild(badge(d["平台"],"p"));
-    if(d["进度"]) top.appendChild(badge(d["进度"],"pr"));
+    if(d["进度"]){
+      const pb=badge(d["进度"],"pr");
+      pb.title="点一下切换进度";
+      pb.onclick=e=>{ e.stopPropagation(); d["进度"]=nextProgress(d["进度"]); commitItems([d]); refresh(); };
+      top.appendChild(pb);
+    }
+    else {
+      const pb=badge("＋进度","pr");
+      pb.title="点一下设进度";
+      pb.style.opacity="0.55";
+      pb.onclick=e=>{ e.stopPropagation(); d["进度"]=nextProgress(""); commitItems([d]); refresh(); };
+      top.appendChild(pb);
+    }
     if(d.images && d.images.length) top.appendChild(badge("图×"+d.images.length,""));
     if(d["标签"] && d["标签"].length) top.appendChild(badge("#"+d["标签"].length,""));
     const go=document.createElement("button"); go.className="go"; go.textContent="›";
@@ -488,6 +543,7 @@ function refresh(){
     div.appendChild(top);
     if(opened.has(d)) div.appendChild(expandNode(d));
     div.onclick=()=>{ if(state.multi) toggleSel(d); else toggleOpen(d); };
+    div.ondblclick=e=>{ e.stopPropagation(); openDetail(d); };
     frag.appendChild(div);
   });
   el.appendChild(frag);
@@ -498,6 +554,7 @@ function refresh(){
 function goList(){
   document.getElementById("view-detail").style.display="none";
   document.getElementById("view-stats").style.display="none";
+  document.getElementById("view-dups").style.display="none";
   document.getElementById("view-list").style.display="block";
   refresh();
   window.scrollTo(0,0);
@@ -757,6 +814,127 @@ document.getElementById("stats").onclick=()=>{
   window.scrollTo(0,0);
 };
 document.getElementById("stats-back").onclick=goList;
+
+/* ---- 重复项 ---- */
+function renderDups(){
+  const body=document.getElementById("dups-body");
+  body.innerHTML="";
+  const gs={};
+  DATA.forEach(d=>{ const k=(d["名字"]||"").trim().toLowerCase(); (gs[k]=gs[k]||[]).push(d); });
+  const keys=Object.keys(gs).filter(k=>gs[k].length>1);
+  if(!keys.length){ body.innerHTML='<div class="empty">没有重名条目</div>'; return; }
+  keys.forEach((k,gi)=>{
+    const g=gs[k];
+    const box=document.createElement("div"); box.className="dupg";
+    const h=document.createElement("h4"); h.textContent=(g[0]["名字"]||"")+" ×"+g.length; box.appendChild(h);
+    let pick=0;
+    g.forEach((d,i)=>{
+      const row=document.createElement("div"); row.className="drow";
+      const rb=document.createElement("input"); rb.type="radio"; rb.className="pick"; rb.name="dup"+gi; rb.checked=i===0;
+      rb.onchange=()=>{ pick=i; };
+      const f=document.createElement("div"); f.className="fields";
+      [["类型"],["平台"],["进度"],["年份"],["作者/社团"],["游戏分类"]].forEach(([key])=>{
+        if(d[key]) f.appendChild(badge(key+"："+d[key],""));
+      });
+      if((d.images||[]).length) f.appendChild(badge("图×"+d.images.length,""));
+      if((d["标签"]||[]).length) f.appendChild(badge("#"+d["标签"].join("、"),""));
+      if(d["内容"]) f.appendChild(badge("内容："+String(d["内容"]).slice(0,30),""));
+      row.appendChild(rb); row.appendChild(f); box.appendChild(row);
+    });
+    const btn=document.createElement("button"); btn.className="delbtn"; btn.textContent="保留选中的，删掉其余";
+    btn.onclick=()=>{
+      const keep=g[pick];
+      const drop=g.filter(d=>d!==keep);
+      if(!drop.length) return;
+      doDelete(drop);
+      renderDups();
+    };
+    box.appendChild(btn);
+    body.appendChild(box);
+  });
+}
+document.getElementById("dups").onclick=()=>{
+  document.getElementById("view-list").style.display="none";
+  document.getElementById("view-detail").style.display="none";
+  document.getElementById("view-stats").style.display="none";
+  document.getElementById("view-dups").style.display="block";
+  renderDups();
+  window.scrollTo(0,0);
+};
+document.getElementById("dups-back").onclick=goList;
+
+/* ---- 导入 CSV ---- */
+function parseCSV(text){
+  const rows=[]; let row=[], cur="", q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else q=false; }
+      else cur+=ch;
+    }else{
+      if(ch==='"') q=true;
+      else if(ch===','){ row.push(cur); cur=""; }
+      else if(ch==='\n'){ row.push(cur); cur=""; rows.push(row); row=[]; }
+      else if(ch!=='\r') cur+=ch;
+    }
+  }
+  if(cur.length||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function doImport(text){
+  const rows=parseCSV(text);
+  if(rows.length<2) return alert("这个文件里没读到数据行。");
+  const head=rows[0].map(h=>h.trim().replace(/^\ufeff/,""));
+  const alpha=["名字","类型","平台","进度","年份","标签","游戏分类","作者/社团","内容"];
+  const idx={};
+  alpha.forEach(k=>{ const i=head.indexOf(k); if(i>=0) idx[k]=i; });
+  if(idx["名字"]===undefined) return alert("CSV 里缺少「名字」这一列。");
+  const byName={};
+  DATA.forEach(d=>{ byName[(d["名字"]||"").trim()]=byName[(d["名字"]||"").trim()]||[]; byName[(d["名字"]||"").trim()].push(d); });
+  let updated=0, added=0, skipped=0;
+  const touched=[];
+  rows.slice(1).forEach(r=>{
+    const name=(r[idx["名字"]]||"").trim();
+    if(!name){ skipped++; return; }
+    const hit=byName[name];
+    if(hit && hit.length){
+      const d=hit[0];
+      alpha.forEach(k=>{
+        const i=idx[k];
+        if(i===undefined || k==="名字") return;
+        const v=(r[i]||"").trim();
+        if(v==="") return;
+        if(k==="标签") d["标签"]=normTags(v);
+        else d[k]=v;
+      });
+      touched.push(d); updated++;
+    }else{
+      const d=normItem({名字:name});
+      alpha.forEach(k=>{
+        const i=idx[k];
+        if(i===undefined || k==="名字") return;
+        const v=(r[i]||"").trim();
+        if(!v) return;
+        if(k==="标签") d["标签"]=normTags(v);
+        else d[k]=v;
+      });
+      DATA.push(d); touched.push(d);
+      (byName[name]=byName[name]||[]).push(d);
+      added++;
+    }
+  });
+  if(touched.length) commitItems(touched);
+  rebuildAll(); refresh();
+  alert("导入完成：更新 "+updated+" 条，新增 "+added+" 条，跳过 "+skipped+" 行。");
+}
+document.getElementById("import").onclick=()=>document.getElementById("imp").click();
+document.getElementById("imp").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ doImport(String(rd.result)); };
+  rd.readAsText(f,"utf-8");
+  e.target.value="";
+});
 
 /* ---- 抽一个（先定范围） ---- */
 let rollPool=null;
