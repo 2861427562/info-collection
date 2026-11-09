@@ -164,16 +164,6 @@ h1{font-size:18px;margin:0}
 </style>
 </head>
 <body>
-<div class="gate" id="gate">
-  <div class="gatebox">
-    <h2>信息收集</h2>
-    <div class="sub">输入观看口令进入</div>
-    <input id="pw" type="password" placeholder="观看口令" autocomplete="current-password">
-    <button id="pw-go">进入</button>
-    <div class="err" id="pw-err"></div>
-    <div class="hint">只有观看口令时是<b>只读</b>的：改、删、上传、多选这些入口不会出现。<br>想改内容，另外输入修改口令。</div>
-  </div>
-</div>
 <div class="wrap" id="view-list">
   <header>
     <div class="toprow">
@@ -392,7 +382,7 @@ async function rpc(fn, body){
 async function loadCloud(){
   let all=[], off=0;
   for(;;){
-    const page=await rpc("view_items",{pw:PW_VIEW, off:off, lim:1000});
+    const page=await rpc("view_items",{off:off, lim:1000});
     all=all.concat(page||[]);
     if(!page || page.length<1000) break;
     off+=page.length;
@@ -1248,24 +1238,6 @@ function showGate(msg){
   inp.value="";
   setTimeout(()=>inp.focus(),60);
 }
-document.getElementById("pw-go").onclick=async ()=>{
-  const pw=document.getElementById("pw").value.trim();
-  if(!pw) return;
-  document.getElementById("pw-err").textContent="校验中…";
-  try{
-    const rows=await rpc("view_items",{pw:pw, off:0, lim:1});
-    if(Array.isArray(rows)){
-      PW_VIEW=pw; sessionStorage.setItem("pw_view",pw);
-      document.getElementById("gate").classList.add("hide");
-      boot();
-    }else{
-      document.getElementById("pw-err").textContent="口令不对";
-    }
-  }catch(e){
-    document.getElementById("pw-err").textContent="口令不对";
-  }
-};
-document.getElementById("pw").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("pw-go").click(); });
 document.getElementById("unlock").onclick=async ()=>{
   const pw=prompt("输入修改口令（只在这个标签页有效，关掉就失效）");
   if(!pw) return;
@@ -1280,7 +1252,6 @@ document.getElementById("unlock").onclick=async ()=>{
 };
 
 async function boot(){
-  if(!PW_VIEW){ showGate(); return; }
   let cache=null;
   try{ cache=JSON.parse(localStorage.getItem(PKEY)||"null"); }catch(e){}
   if(cache && cache.length){
@@ -1309,15 +1280,9 @@ async function boot(){
     }
   }catch(e){
     const bad=/bad password/i.test(e.message||"");
-    if(bad && !(cache&&cache.length)){
-      PW_VIEW=""; sessionStorage.removeItem("pw_view");
-      showGate("口令不对");
-      return;
-    }
     if(!DATA.length) DATA=(cache&&cache.length?cache:ORIG).map(normItem);
-    setStatus("err", bad ? "口令不对，用的是本地缓存" : "离线，用的是本地缓存");
+    setStatus("err", bad ? "读取被拒，用的是本地缓存" : "离线，用的是本地缓存");
   }
-  document.getElementById("gate").classList.add("hide");
   saveCache();
   rebuildAll();
   autoSnapshot();
