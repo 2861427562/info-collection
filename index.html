@@ -49,6 +49,22 @@ h1{font-size:18px;margin:0}
 .dupg .drow .pick{flex:none;margin-top:3px;accent-color:var(--acc)}
 .dupg .drow .fields{flex:1;display:flex;flex-wrap:wrap;gap:6px}
 .dupg .delbtn{margin-top:10px;border:1px solid var(--line);background:var(--chip);color:var(--danger);padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer}
+.stars{color:var(--dup);font-size:15px;letter-spacing:1px;cursor:pointer;user-select:none}
+.stars .off{color:#3a3f4d}
+.expand .note{margin-top:6px;color:var(--dim);font-size:13px;white-space:pre-wrap}
+.detail .sec{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.detail .sec .lab{color:var(--dim);font-size:12px;margin-bottom:8px}
+.detail .sec textarea{width:100%;min-height:60px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--txt);font-size:14px;resize:vertical;outline:none}
+.detail .sec .row2{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.detail .sec button{border:1px solid var(--line);background:var(--chip);color:var(--txt);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.detail .sec a.btnlink{display:inline-block;border:1px solid var(--acc);color:var(--acc);padding:7px 12px;border-radius:8px;text-decoration:none;font-size:13px}
+.imwrap{position:relative;display:inline-block}
+.imwrap .ctl{position:absolute;left:0;right:0;bottom:0;display:flex;gap:2px;justify-content:center;background:rgba(0,0,0,.55);padding:2px;border-radius:0 0 8px 8px}
+.imwrap .ctl button{border:none;background:transparent;color:#fff;font-size:11px;cursor:pointer;padding:2px 4px}
+.cover-tag{position:absolute;top:4px;left:4px;background:var(--acc);color:#0c0e12;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:700}
+.item.swiping{transition:none}
+.item.snap{transition:transform .18s ease}
+
 .badge.dup{color:#0e0f13;background:var(--dup);font-weight:700}
 .expand{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;cursor:default}
 .expand .row{display:flex;gap:10px;padding:2px 0;font-size:13px}
@@ -190,6 +206,16 @@ h1{font-size:18px;margin:0}
     </div>
   </div>
   <div class="rows" id="d-rows"></div>
+  <div class="sec">
+    <div class="lab">评分</div>
+    <div class="stars" id="d-rate"></div>
+  </div>
+  <div class="sec">
+    <div class="lab">短备注</div>
+    <textarea id="d-note" placeholder="一句话备注"></textarea>
+    <div class="row2"><button id="d-note-save">保存备注</button></div>
+  </div>
+  <div class="sec" id="d-links"></div>
   <div class="imgs" id="d-imgs"></div>
   <div class="addimg">
     <input type="text" id="img-url" placeholder="粘贴图片链接，回车添加">
@@ -246,6 +272,7 @@ h1{font-size:18px;margin:0}
   <div class="field"><label>标签</label><input id="e-tags" placeholder="多个用逗号隔开"></div>
   <div class="field"><label>游戏分类</label><input id="e-cat"></div>
   <div class="field"><label>作者/社团</label><input id="e-author"></div>
+  <div class="field"><label>链接（steam / 官网）</label><input id="e-link" placeholder="https://…"></div>
   <div class="field"><label>内容</label><textarea id="e-content"></textarea></div>
   <div class="act"><button id="e-cancel">取消</button><button class="pri" id="e-save">保存</button></div>
 </div></div>
@@ -259,6 +286,33 @@ const ORIG = [{"名字": "@dbFfNj9yodNccnD", "类型": "画师", "平台": "", "
 const PKEY = "collection-data-v1";
 const BKPFX = "collection-backup-";
 const UNPLAYED = ["未玩","未看","未收集"];
+
+/* 拼音首字母：拿汉字跟每个声母的“最小音节字”比大小，二分定位 */
+const PY_BOUND = [["a","阿"],["b","八"],["c","擦"],["d","搭"],["e","额"],["f","发"],["g","嘎"],["h","哈"],["j","击"],["k","喀"],["l","拉"],["m","妈"],["n","拿"],["o","哦"],["p","趴"],["q","七"],["r","然"],["s","撒"],["t","他"],["w","挖"],["x","西"],["y","压"],["z","匝"]];
+let pyCol=null;
+try{ pyCol=new Intl.Collator("zh-Hans-CN-u-co-pinyin"); }catch(e){ pyCol=null; }
+const pyCache=new Map();
+function pyInitial(ch){
+  if(!/[\u4e00-\u9fff]/.test(ch)) return ch.toLowerCase();
+  if(pyCache.has(ch)) return pyCache.get(ch);
+  let ans="";
+  if(pyCol){
+    let lo=0, hi=PY_BOUND.length-1;
+    while(lo<=hi){
+      const mid=(lo+hi)>>1;
+      if(pyCol.compare(ch, PY_BOUND[mid][1])>=0){ ans=PY_BOUND[mid][0]; lo=mid+1; }
+      else hi=mid-1;
+    }
+  }
+  pyCache.set(ch,ans);
+  return ans;
+}
+function ensureKeys(d){
+  if(d._s!==undefined) return;
+  const parts=[d["名字"],d["作者/社团"],d["内容"],d["游戏分类"],d["类型"],d["平台"],d["备注"],(d["标签"]||[]).join(" ")];
+  d._s=parts.filter(Boolean).join(" ").toLowerCase();
+  d._i=Array.from(d["名字"]||"").map(pyInitial).join("");
+}
 
 const SB_URL = "https://jriobiugqjsejpctzhuj.supabase.co";
 const SB_KEY = "sb_publishable_X3ZdlVAhNlUouEiEB7HM0g_VHjgcpJ8";
@@ -278,9 +332,12 @@ function normItem(d){
   if(!Array.isArray(o.images)) o.images=[];
   o["标签"]=normTags(o["标签"]);
   if(o["年份"]===undefined) o["年份"]="";
+  if(o["评分"]===undefined) o["评分"]=0;
+  if(o["备注"]===undefined) o["备注"]="";
+  if(o["链接"]===undefined) o["链接"]="";
   return o;
 }
-function stripId(d){ const c=Object.assign({}, d); delete c._id; return c; }
+function stripId(d){ const c=Object.assign({}, d); delete c._id; delete c._s; delete c._i; return c; }
 function newId(){
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
   return "x"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
@@ -364,7 +421,7 @@ async function flush(){
 }
 function commitItems(items){
   saveCache();
-  (items||[]).forEach(d=>{ if(!d) return; d._upd=Date.now(); dirty.add(d); if(d._id) tomb.delete(d._id); });
+  (items||[]).forEach(d=>{ if(!d) return; d._upd=Date.now(); delete d._s; delete d._i; dirty.add(d); if(d._id) tomb.delete(d._id); });
   flush();
 }
 function dropItems(objs){
@@ -378,6 +435,39 @@ const state = {q:"", type:null, platform:null, progress:null, sort:"none", multi
 const sel = new Set();
 const opened = new Set();
 let editIdx = -1, curIdx = -1, undo = null;
+let suppressClick = 0;
+
+function attachSwipe(el, d){
+  let sx=0, sy=0, dx=0, active=false, moved=false;
+  el.addEventListener("touchstart", e=>{
+    if(e.touches.length!==1) return;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; dx=0; active=true; moved=false;
+    el.classList.remove("snap");
+  }, {passive:true});
+  el.addEventListener("touchmove", e=>{
+    if(!active) return;
+    const cx=e.touches[0].clientX-sx, cy=e.touches[0].clientY-sy;
+    if(!moved){
+      if(Math.abs(cx)<12 || Math.abs(cx)<Math.abs(cy)) return;
+      moved=true; el.classList.add("swiping");
+    }
+    dx=cx;
+    el.style.transform="translateX("+Math.max(-110, Math.min(110, dx))+"px)";
+    if(e.cancelable) e.preventDefault();
+  }, {passive:false});
+  el.addEventListener("touchend", ()=>{
+    if(!active) return;
+    active=false;
+    el.classList.remove("swiping"); el.classList.add("snap");
+    el.style.transform="";
+    setTimeout(()=>el.classList.remove("snap"), 220);
+    if(!moved) return;
+    suppressClick=Date.now()+500;
+    if(dx<-70){ doDelete([d]); }
+    else if(dx>70){ d["进度"]=nextProgress(d["进度"]); commitItems([d]); refresh(); }
+    dx=0;
+  });
+}
 function uniq(key){ const s=new Set(); DATA.forEach(d=>{ if(d[key]) s.add(d[key]); }); return Array.from(s); }
 
 function buildChips(id, eng){
@@ -403,7 +493,10 @@ function fillDatalists(){
 function filtered(){
   const q=state.q.trim().toLowerCase();
   return DATA.filter(d=>{
-    if(q && !(d["名字"]||"").toLowerCase().includes(q)) return false;
+    if(q){
+      ensureKeys(d);
+      if(d._s.indexOf(q)<0 && d._i.indexOf(q)<0) return false;
+    }
     if(state.type && d["类型"]!==state.type) return false;
     if(state.platform && d["平台"]!==state.platform) return false;
     if(state.progress && d["进度"]!==state.progress) return false;
@@ -434,6 +527,10 @@ function sortItems(list){
   return c;
 }
 
+function starStr(n){
+  n=Math.max(0,Math.min(5,parseInt(n,10)||0));
+  return "★".repeat(n)+"☆".repeat(5-n);
+}
 function nextProgress(cur){
   if(cur==="未看") return "已看";
   if(cur==="已看") return "未看";
@@ -462,6 +559,8 @@ function expandNode(d){
     d["标签"].forEach(t=>{ const s=document.createElement("span"); s.className="tb"; s.textContent=t; tl.appendChild(s); });
     box.appendChild(tl);
   }
+  if(d["评分"]){ const s=document.createElement("div"); s.className="stars"; s.textContent=starStr(d["评分"]); box.appendChild(s); }
+  if(d["备注"]){ const nt=document.createElement("div"); nt.className="note"; nt.textContent=d["备注"]; box.appendChild(nt); }
   if(d.images && d.images.length){
     const th=document.createElement("div"); th.className="thumbs";
     d.images.slice(0,6).forEach(src=>{ const im=document.createElement("img"); im.src=src; th.appendChild(im); });
@@ -535,6 +634,8 @@ function refresh(){
       top.appendChild(pb);
     }
     if(d.images && d.images.length) top.appendChild(badge("图×"+d.images.length,""));
+    if(d["评分"]) top.appendChild(badge("★"+d["评分"],""));
+    if(d["备注"]) top.appendChild(badge("备注",""));
     if(d["标签"] && d["标签"].length) top.appendChild(badge("#"+d["标签"].length,""));
     const go=document.createElement("button"); go.className="go"; go.textContent="›";
     go.title="打开详情";
@@ -542,8 +643,9 @@ function refresh(){
     top.appendChild(go);
     div.appendChild(top);
     if(opened.has(d)) div.appendChild(expandNode(d));
-    div.onclick=()=>{ if(state.multi) toggleSel(d); else toggleOpen(d); };
+    div.onclick=()=>{ if(Date.now()<suppressClick) return; if(state.multi) toggleSel(d); else toggleOpen(d); };
     div.ondblclick=e=>{ e.stopPropagation(); openDetail(d); };
+    attachSwipe(div, d);
     frag.appendChild(div);
   });
   el.appendChild(frag);
@@ -582,12 +684,43 @@ function renderDetail(d){
   });
   const imgs=document.getElementById("d-imgs"); imgs.innerHTML="";
   (d.images||[]).forEach((src,i)=>{
-    const box=document.createElement("div"); box.className="im";
+    const wrap=document.createElement("div"); wrap.className="imwrap";
     const img=document.createElement("img"); img.src=src;
     const x=document.createElement("button"); x.className="x"; x.textContent="×";
     x.onclick=()=>{ d.images.splice(i,1); commitItems([d]); renderDetail(d); };
-    box.appendChild(img); box.appendChild(x); imgs.appendChild(box);
+    const ctl=document.createElement("div"); ctl.className="ctl";
+    const mk=(label,fn)=>{ const b=document.createElement("button"); b.textContent=label; b.onclick=fn; ctl.appendChild(b); };
+    mk("←", ()=>{ if(i>0){ const t=d.images[i-1]; d.images[i-1]=d.images[i]; d.images[i]=t; commitItems([d]); renderDetail(d); } });
+    mk("→", ()=>{ if(i<d.images.length-1){ const t=d.images[i+1]; d.images[i+1]=d.images[i]; d.images[i]=t; commitItems([d]); renderDetail(d); } });
+    mk("封面", ()=>{ if(i>0){ const s=d.images.splice(i,1)[0]; d.images.unshift(s); commitItems([d]); renderDetail(d); } });
+    wrap.appendChild(img); wrap.appendChild(x); wrap.appendChild(ctl);
+    if(i===0){ const tag=document.createElement("span"); tag.className="cover-tag"; tag.textContent="封面"; wrap.appendChild(tag); }
+    imgs.appendChild(wrap);
   });
+
+  const rate=document.getElementById("d-rate"); rate.innerHTML="";
+  for(let i=1;i<=5;i++){
+    const s=document.createElement("span"); s.className=(i<=(d["评分"]||0)?"":"off"); s.textContent="★";
+    s.onclick=()=>{
+      const nv=document.getElementById("d-note");
+      if(nv && curIdx>=0 && DATA[curIdx]) d["备注"]=nv.value;
+      d["评分"]=(d["评分"]===i?0:i);
+      commitItems([d]); renderDetail(d);
+    };
+    rate.appendChild(s);
+  }
+  const noteEl=document.getElementById("d-note");
+  if(noteEl) noteEl.value=d["备注"]||"";
+
+  const links=document.getElementById("d-links"); links.innerHTML="";
+  const lab=document.createElement("div"); lab.className="lab"; lab.textContent="链接"; links.appendChild(lab);
+  if(d["链接"]){
+    const a=document.createElement("a"); a.className="btnlink"; a.href=d["链接"]; a.target="_blank"; a.rel="noreferrer";
+    a.textContent="打开链接 ↗"; links.appendChild(a);
+  }else{
+    const sp=document.createElement("div"); sp.style.color="var(--dim)"; sp.style.fontSize="13px";
+    sp.textContent="还没填。点上面「编辑」可以加 steam / 官网地址。"; links.appendChild(sp);
+  }
 }
 document.getElementById("back").onclick=goList;
 
@@ -627,6 +760,7 @@ function openEdit(d){
   document.getElementById("e-tags").value = (d["标签"]||[]).join("，");
   document.getElementById("e-cat").value = d["游戏分类"]||"";
   document.getElementById("e-author").value = d["作者/社团"]||"";
+  document.getElementById("e-link").value = d["链接"]||"";
   document.getElementById("e-content").value = d["内容"]||"";
   document.getElementById("editmodal").classList.add("on");
 }
@@ -636,7 +770,7 @@ function openNew(){
   DATA.push(newDraft);
   editIdx = DATA.length-1;
   document.getElementById("e-title").textContent = "新增条目";
-  ["e-name","e-type","e-platform","e-progress","e-year","e-tags","e-cat","e-author","e-content"].forEach(id=>{ document.getElementById(id).value=""; });
+  ["e-name","e-type","e-platform","e-progress","e-year","e-tags","e-cat","e-author","e-link","e-content"].forEach(id=>{ document.getElementById(id).value=""; });
   document.getElementById("editmodal").classList.add("on");
 }
 function saveEdit(){
@@ -650,6 +784,7 @@ function saveEdit(){
   d["标签"]=normTags(document.getElementById("e-tags").value);
   d["游戏分类"]=document.getElementById("e-cat").value.trim();
   d["作者/社团"]=document.getElementById("e-author").value.trim();
+  d["链接"]=document.getElementById("e-link").value.trim();
   d["内容"]=document.getElementById("e-content").value.trim();
   const removed = !d["名字"];
   if(removed){ DATA.splice(editIdx,1); }
@@ -706,6 +841,11 @@ function rebuildAll(){
   fillDatalists();
 }
 document.getElementById("d-edit").onclick=()=>openEdit(DATA[curIdx]);
+document.getElementById("d-note-save").onclick=()=>{
+  const d=DATA[curIdx]; if(!d) return;
+  d["备注"]=document.getElementById("d-note").value.trim();
+  commitItems([d]); renderDetail(d);
+};
 document.getElementById("d-del").onclick=()=>doDelete([DATA[curIdx]]);
 document.getElementById("add").onclick=openNew;
 document.getElementById("e-save").onclick=saveEdit;
@@ -885,7 +1025,7 @@ function doImport(text){
   const rows=parseCSV(text);
   if(rows.length<2) return alert("这个文件里没读到数据行。");
   const head=rows[0].map(h=>h.trim().replace(/^\ufeff/,""));
-  const alpha=["名字","类型","平台","进度","年份","标签","游戏分类","作者/社团","内容"];
+  const alpha=["名字","类型","平台","进度","年份","标签","游戏分类","作者/社团","评分","备注","链接","内容"];
   const idx={};
   alpha.forEach(k=>{ const i=head.indexOf(k); if(i>=0) idx[k]=i; });
   if(idx["名字"]===undefined) return alert("CSV 里缺少「名字」这一列。");
@@ -1032,7 +1172,7 @@ document.getElementById("bk-now").onclick=()=>{
 
 /* ---- 导出 / 重置 / 排序 / 搜索 ---- */
 function exportCSV(){
-  const cols=["名字","类型","平台","进度","年份","标签","内容","游戏分类","作者/社团"];
+  const cols=["名字","类型","平台","进度","年份","标签","游戏分类","作者/社团","评分","备注","链接","内容"];
   const csv=cols.map(c=>'"'+c+'"').join(",")+"\r\n"
     + DATA.map(d=>cols.map(c=>{
         let v = c==="标签" ? (d["标签"]||[]).join("、") : (d[c]||"");
