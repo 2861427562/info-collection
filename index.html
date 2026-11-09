@@ -64,6 +64,7 @@ h1{font-size:18px;margin:0}
 .cover-tag{position:absolute;top:4px;left:4px;background:var(--acc);color:#0c0e12;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:700}
 .item.swiping{transition:none}
 .item.snap{transition:transform .18s ease}
+.morebtn{display:inline-block;margin:12px 0 4px;border:1px solid var(--line);background:var(--chip);color:var(--acc);padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer}
 
 .badge.dup{color:#0e0f13;background:var(--dup);font-weight:700}
 .expand{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;cursor:default}
@@ -431,7 +432,7 @@ function dropItems(objs){
 }
 
 const KEYS = {type:"类型", platform:"平台", progress:"进度"};
-const state = {q:"", type:null, platform:null, progress:null, sort:"none", multi:false};
+const state = {q:"", type:null, platform:null, progress:null, sort:"none", multi:false, limit:400};
 const sel = new Set();
 const opened = new Set();
 let editIdx = -1, curIdx = -1, undo = null;
@@ -475,11 +476,11 @@ function buildChips(id, eng){
   const el=document.getElementById(id);
   const all=document.createElement("span");
   all.className="chip on"; all.textContent="全部";
-  all.onclick=()=>{ state[eng]=null; refresh(); };
+  all.onclick=()=>{ state[eng]=null; state.limit=400; refresh(); };
   el.appendChild(all);
   uniq(key).forEach(v=>{
     const c=document.createElement("span"); c.className="chip"; c.textContent=v;
-    c.onclick=()=>{ state[eng]=v; refresh(); };
+    c.onclick=()=>{ state[eng]=v; state.limit=400; refresh(); };
     el.appendChild(c);
   });
 }
@@ -604,7 +605,7 @@ function refresh(){
   el.innerHTML="";
   if(!list.length){ el.innerHTML='<div class="empty">没有匹配的条目</div>'; updateSelBar(); return; }
   const frag=document.createDocumentFragment();
-  list.slice(0,400).forEach(d=>{
+  list.slice(0,state.limit).forEach(d=>{
     const cnt=nameCount[(d["名字"]||"").trim().toLowerCase()]||0;
     const dup=cnt>1;
     const div=document.createElement("div");
@@ -649,7 +650,18 @@ function refresh(){
     frag.appendChild(div);
   });
   el.appendChild(frag);
-  if(list.length>400){ const more=document.createElement("div"); more.className="empty"; more.textContent="只显示前 400 条，用搜索缩小范围"; el.appendChild(more); }
+  if(list.length>state.limit){
+    const more=document.createElement("button");
+    more.className="morebtn";
+    more.textContent="再显示 400 条（还有 "+(list.length-state.limit)+" 条）";
+    more.onclick=()=>{ state.limit+=400; refresh(); };
+    el.appendChild(more);
+    const allb=document.createElement("button");
+    allb.className="morebtn"; allb.style.marginLeft="8px";
+    allb.textContent="全部显示（"+list.length+" 条）";
+    allb.onclick=()=>{ state.limit=list.length; refresh(); };
+    el.appendChild(allb);
+  }
   updateSelBar();
 }
 
@@ -1193,7 +1205,7 @@ document.getElementById("reset").onclick=async()=>{
   location.reload();
 };
 document.getElementById("sort").addEventListener("change",e=>{ state.sort=e.target.value; refresh(); });
-document.getElementById("q").addEventListener("input", e=>{ state.q=e.target.value; refresh(); });
+document.getElementById("q").addEventListener("input", e=>{ state.q=e.target.value; state.limit=400; refresh(); });
 
 async function boot(){
   let cache=null;
