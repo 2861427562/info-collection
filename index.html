@@ -199,7 +199,7 @@ html[data-theme="night"] .bgfx .grain-lit{opacity:.22;mix-blend-mode:screen}
 .item{position:relative;background:transparent;border:0;border-bottom:1px solid var(--line-subtle);border-radius:0;padding:8px 16px;min-height:48px;margin-bottom:0;cursor:pointer;transition:transform .22s ease;touch-action:pan-y;contain:layout paint style}
 .item::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:2px;background:var(--acc);transform:scaleY(0);transform-origin:top;transition:transform .18s ease}
 .item:hover::before{transform:scaleY(1)}
-.item .thumb{flex:none;width:32px;height:32px;border-radius:2px;object-fit:cover;border:1px solid var(--line);margin-right:10px}
+.item .thumb{flex:none;width:32px;height:32px;border-radius:2px;object-fit:cover;border:1px solid var(--line);margin-right:10px;background:var(--paper-2)}
 .item .head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .item.shifted{transform:translateX(-88px)}
 .trash{position:fixed;right:20px;bottom:78px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);border-radius:3px;background:var(--paper);color:var(--helper);font-size:16px;opacity:0;transform:scale(.8);transition:opacity .2s ease,transform .2s ease;pointer-events:none;z-index:70}
@@ -933,7 +933,10 @@ function refresh(){
     if(coverOf(d)){
       const im=document.createElement("img"); im.className="thumb"; im.src=coverOf(d); im.loading="lazy"; im.alt="";
       im.referrerPolicy="no-referrer";
-      im.onerror=()=>im.remove();
+      im.onerror=()=>{
+        if(!im.dataset.retry){ im.dataset.retry="1"; setTimeout(()=>{ im.src=coverOf(d); }, 1500); }
+        else { im.remove(); }
+      };
       im.onmouseenter=()=>showHoverImage(im, coverOf(d));
       im.onmouseleave=hideHoverImage;
       irow.insertBefore(im, imain);
@@ -1104,7 +1107,10 @@ function renderWall(list){
     if(coverOf(d)){
       const im=document.createElement("img"); im.src=coverOf(d); im.loading="lazy"; im.alt="";
       im.referrerPolicy="no-referrer";
-      im.onerror=()=>im.remove();
+      im.onerror=()=>{
+        if(!im.dataset.retry){ im.dataset.retry="1"; setTimeout(()=>{ im.src=coverOf(d); }, 1500); }
+        else { im.remove(); }
+      };
       cov.appendChild(im);
     }
     if(d["进度"]){ const pg=document.createElement("span"); pg.className="prog"; pg.textContent=d["进度"]; cov.appendChild(pg); }
