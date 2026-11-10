@@ -1129,18 +1129,33 @@ function shuffleWall(){
   window.__wallPick=arr.slice(0,12);
   return window.__wallPick;
 }
-document.getElementById("wallshuffle").onclick=(ev)=>{
+let wallPickTimer=0;
+function wallShuffleOnce(btn){
   const grid=document.getElementById("wallgrid");
   if(!grid) return;
-  const btn=ev.currentTarget;
   if(btn){ btn.classList.add("spin"); setTimeout(()=>btn.classList.remove("spin"),320); }
   grid.style.opacity="0";
-  setTimeout(()=>{
+  clearTimeout(wallPickTimer);
+  wallPickTimer=setTimeout(()=>{
     window.__wallPick=null;
     renderWall();
     grid.style.opacity="1";
   }, 200);
-};
+}
+document.getElementById("wallshuffle").onclick=(ev)=>{ wallShuffleOnce(ev.currentTarget); };
+
+/* 自动随机：默认 12 秒换一批；鼠标停在墙上 / 页面在后台 / 滚出视野时暂停 */
+const WALL_AUTO_MS = 12000;
+function wallAutoTick(){
+  const wall=document.getElementById("wall");
+  if(!wall || wall.classList.contains("closed")) return;
+  if(document.hidden) return;
+  if(wall.matches(":hover")) return;
+  const r=wall.getBoundingClientRect();
+  if(r.bottom < 60 || r.top > innerHeight) return;
+  wallShuffleOnce(document.getElementById("wallshuffle"));
+}
+setInterval(wallAutoTick, WALL_AUTO_MS);
 document.getElementById("walltoggle").onclick=()=>{
   const wall=document.getElementById("wall"), grid=document.getElementById("wallgrid"), btn=document.getElementById("walltoggle");
   if(!wall||!grid) return;
