@@ -228,7 +228,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 
 <script>
 /* ========== 配置 ========== */
-const WORKER = localStorage.getItem("manga_worker") || "";
+let WORKER = localStorage.getItem("manga_worker") || "";
 const R2_BASE = "https://pub-84db0f3292924614bfb2c03bf14a4e4f.r2.dev";
 const SB_URL = "https://jriobiugqjsejpctzhuj.supabase.co";
 const SB_KEY = "sb_publishable_X3ZdlVAhNlUouEiEB7HM0g_VHjgcpJ8";
@@ -443,7 +443,12 @@ const upStart = document.getElementById("upStart");
 const dropEl = document.getElementById("drop");
 
 upBtn.onclick = () => {
-  if(!WORKER){ toast("还没配置上传服务器"); return; }
+  if(!WORKER){
+    const u = prompt("第一次用，先填 Worker 地址（形如 https://xxx.workers.dev）");
+    if(!u) return;
+    WORKER = u.replace(/\/+$/, "");
+    localStorage.setItem("manga_worker", WORKER);
+  }
   upPanel.classList.add("on");
 };
 document.getElementById("upCancel").onclick = () => upPanel.classList.remove("on");
