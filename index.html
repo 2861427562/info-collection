@@ -29,16 +29,17 @@ html[data-theme="night"]{
 }
 *{box-sizing:border-box}
 html{color-scheme:light}
-body{margin:0;padding-right:136px;background:var(--paper);color:var(--body);
+body{margin:0;overflow-x:hidden;padding-right:136px;background:var(--paper);color:var(--body);
   font-family:var(--sans);font-size:1.0625rem;line-height:1.7;
   font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;}
 .wrap{max-width:860px;margin:0 auto;padding:28px 20px 120px;}
-header{position:sticky;top:0;z-index:6;background:transparent;padding:20px 0 16px;border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
-header::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:16px;pointer-events:none;background:linear-gradient(var(--paper),rgba(0,0,0,0));opacity:0;transition:opacity .22s ease}
-header.scrolled{border-bottom-color:var(--line-subtle);background:var(--paper);box-shadow:0 10px 26px rgba(7,27,43,.10)}
+header{position:sticky;top:0;z-index:6;background:transparent;padding:20px 0 16px;width:100%}
+header::before{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;z-index:-1;background:transparent;border-bottom:1px solid transparent;transition:background .22s ease,border-color .22s ease,box-shadow .22s ease}border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
+header::after{content:"";position:absolute;left:calc(50% - 50vw);width:100vw;bottom:-16px;height:16px;pointer-events:none;background:linear-gradient(var(--paper),rgba(0,0,0,0));opacity:0;transition:opacity .22s ease}
+header.scrolled::before{background:var(--paper);border-bottom-color:var(--line-subtle);box-shadow:0 10px 26px rgba(7,27,43,.10)}
 header.scrolled::after{opacity:1}
-.hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:860px;margin:0 auto;padding:0 20px}
 .logo{width:26px;height:26px;flex:none;display:block;margin-right:-4px}
 .hleft{display:flex;align-items:baseline;gap:12px;min-width:0;flex:1 1 auto;overflow:hidden}
 h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;letter-spacing:.01em;margin:0;color:var(--ink);white-space:nowrap}
@@ -69,20 +70,23 @@ h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;l
 @keyframes cwave{0%{opacity:.28;transform:scale(.15)}100%{opacity:0;transform:scale(1)}}
 @keyframes cdots{0%{opacity:.24;transform:scale(.4)}100%{opacity:0;transform:scale(1.7)}}
 .bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
-  --blind:rgba(7,27,43,.055); --blind-2:rgba(7,27,43,.022); --blind-hi:rgba(255,255,255,.35)}
-html[data-theme="night"] .bgfx{--blind:rgba(255,233,168,.06); --blind-2:rgba(255,233,168,.025); --blind-hi:rgba(255,215,73,.10)}
+  --blind:rgba(7,27,43,.05); --blind-seam:rgba(7,27,43,.075); --blind-hi:rgba(255,255,255,.55); --blind-deep:rgba(7,27,43,.085)}
+html[data-theme="night"] .bgfx{--blind:rgba(255,233,168,.05); --blind-seam:rgba(0,0,0,.28); --blind-hi:rgba(255,215,73,.14); --blind-deep:rgba(0,0,0,.30)}
 .bgfx .blinds{position:absolute;inset:-2px;
   background-image:repeating-linear-gradient(90deg,
-    var(--blind-2) 0px, var(--blind-2) 1px,
-    rgba(0,0,0,0) 1px, rgba(0,0,0,0) 5px,
-    var(--blind) 5px, var(--blind) 6px,
-    rgba(0,0,0,0) 6px, rgba(0,0,0,0) 8px)}
+    var(--blind-seam) 0px, var(--blind-seam) 1px,
+    var(--blind-hi) 1px, var(--blind-hi) 3px,
+    var(--blind) 3px, var(--blind) 6px,
+    var(--blind-deep) 6px, var(--blind-deep) 7.4px,
+    var(--blind-seam) 7.4px, var(--blind-seam) 8px)}
 .bgfx .blindlight{position:absolute;top:-10%;bottom:-10%;left:-45%;width:190%;
   background:linear-gradient(100deg,
     rgba(0,0,0,0) 34%, var(--blind-hi) 47%, rgba(0,0,0,0) 58%);
   animation:blindmove 52s ease-in-out infinite alternate;will-change:transform}
 @keyframes blindmove{from{transform:translateX(-11%)}to{transform:translateX(11%)}}
-.bgfx .glow{position:absolute;left:0;top:0;width:620px;height:620px;margin:-310px 0 0 -310px;border-radius:50%;background:radial-gradient(circle, rgba(143,118,80,.17) 0%, rgba(143,118,80,0) 68%);transform:translate3d(var(--bx,50vw),var(--by,45vh),0);will-change:transform}
+.bgfx .glow{position:absolute;left:0;top:0;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,.62) 32%, rgba(255,255,255,.18) 56%, rgba(255,255,255,0) 72%);
+  mix-blend-mode:overlay;transform:translate3d(var(--bx,50vw),var(--by,45vh),0);will-change:transform}
 .bgfx .dots{position:absolute;inset:0;background-image:radial-gradient(rgba(31,26,20,.16) 1px, transparent 1px);background-size:22px 22px;opacity:.55;-webkit-mask-image:radial-gradient(circle 240px at var(--bx,50vw) var(--by,45vh), #000 0%, transparent 72%);mask-image:radial-gradient(circle 240px at var(--bx,50vw) var(--by,45vh), #000 0%, transparent 72%)}
 .wrap{position:relative;z-index:1}
 .split{position:fixed;inset:0;z-index:200;pointer-events:none;display:flex}
@@ -332,8 +336,7 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
 <div class="ripple-layer" id="rippleLayer"></div>
 <div class="split" id="split"><div class="pane l"></div><div class="pane r"></div><span class="seam" id="seam"></span></div>
 <div class="progress" id="prog"></div>
-<div class="wrap" id="view-list">
-  <header id="hdr">
+<header id="hdr">
     <div class="hrow">
       <div class="hleft">
         <svg class="logo" viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="16" width="7" height="30" fill="var(--line-strong)"/><rect x="16" y="10" width="7" height="36" fill="var(--acc)"/><rect x="26" y="20" width="7" height="26" fill="var(--acc-ink)"/><rect x="36" y="14" width="7" height="32" fill="var(--acc-soft)"/><rect x="46" y="22" width="4" height="24" fill="var(--line-strong)"/></svg>
@@ -347,6 +350,8 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
       </div>
     </div>
   </header>
+
+<div class="wrap" id="view-list">
   <section class="wall" id="wall">
     <div class="wallhead">
       <h2>Galgame</h2>
