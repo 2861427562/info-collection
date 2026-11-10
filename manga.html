@@ -348,7 +348,7 @@ const qEl = document.getElementById("q");
 qEl.addEventListener("input", () => { query = qEl.value.trim().toLowerCase(); renderShelf(); });
 document.getElementById("reloadBtn").onclick = () => location.reload();
 
-fetch((DEMO ? "_manga_index_backup.json" : "manga.json") + "?t=" + Date.now(), { cache: "no-store" })
+fetch((DEMO ? "demo.json" : "manga.json") + "?t=" + Date.now(), { cache: "no-store" })
   .then(r => r.json())
   .then(j => { INDEX = j; renderShelf(); })
   .catch(() => {
