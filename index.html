@@ -235,7 +235,8 @@ html[data-theme="night"] .bgfx .grain-lit{opacity:.22;mix-blend-mode:screen}
 .totop.on{opacity:1;pointer-events:auto}
 .totop:hover{border-color:var(--acc);color:var(--acc)}
 /* 右侧悬浮工具栏 */
-.side{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:6px;width:104px}
+.side{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:6px;width:104px;transition:opacity .2s ease,transform .2s ease}
+body.swiping .side{opacity:0;pointer-events:none;transform:translateY(-50%) translateX(8px)}
 .sbtn{width:100%;border:1px solid var(--line-strong);border-radius:3px;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:.75rem;line-height:1.45;padding:6px 10px;text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .15s,color .15s}
 select.sbtn{text-align:left;padding-right:20px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3L8 1' fill='none' stroke='%238a8275' stroke-width='1.3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
 .sbtn:hover{border-color:var(--acc);color:var(--acc)}
@@ -659,6 +660,11 @@ const sel = new Set();
 const opened = new Set();
 let editIdx = -1, curIdx = -1, undo = null, imgIdx = 0;
 let suppressClick = 0;
+let swSideTimer = 0;
+function sideYield(on){
+  if(on){ clearTimeout(swSideTimer); document.body.classList.add("swiping"); }
+  else { clearTimeout(swSideTimer); swSideTimer = setTimeout(()=>document.body.classList.remove("swiping"), 400); }
+}
 
 function attachSwipe(el, d){
   let sx=0, sy=0, dx=0, base=0, active=false, moved=false;
@@ -674,7 +680,7 @@ function attachSwipe(el, d){
     const cx=e.touches[0].clientX-sx, cy=e.touches[0].clientY-sy;
     if(!moved){
       if(Math.abs(cx)<12 || Math.abs(cx)<Math.abs(cy)) return;
-      moved=true; el.classList.add("swiping");
+      moved=true; el.classList.add("swiping"); sideYield(true);
     }
     dx=Math.max(-110, Math.min(0, base+cx));
     el.style.transform="translateX("+dx+"px)";
@@ -685,6 +691,7 @@ function attachSwipe(el, d){
     active=false;
     el.classList.remove("swiping");
     el.style.transform="";
+    sideYield(false);
     if(!moved) return;
     suppressClick=Date.now()+450;
     if(dx>90 && base===0){ if(!CAN_EDIT) return; d["进度"]=nextProgress(d["进度"]); commitItems([d]); refresh(); dx=0; return; }
