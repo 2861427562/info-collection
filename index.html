@@ -15,6 +15,7 @@ html[data-theme="day"]{
   --paper:#fdf1cf; --paper-2:#f8e6b8; --ink:#071b2b;
   --body:#22303f; --sec:#2e4057; --helper:#7d6c4f;
   --acc:#ff5b42; --acc-ink:#802c62; --acc-soft:#ffe6bd; --acc-on:#fffaf2;
+  --sheet:rgba(253,241,207,.74); --sway:rgba(7,27,43,.30);
   --line-strong:#c9a96a; --line:#e3cf9f; --line-subtle:#efe0bd;
   --danger:#c33a2c; --dup:#802c62; --star:#e8a33c; --ok:#4f7a4a; --busy:#e8a33c;
   --toast-bg:#071b2b; --toast-fg:#fdf1cf;
@@ -23,6 +24,7 @@ html[data-theme="night"]{
   --paper:#071b2b; --paper-2:#0d2438; --ink:#ffe9a8;
   --body:#dccfae; --sec:#c8b98d; --helper:#9a8f70;
   --acc:#ffd749; --acc-ink:#ffd749; --acc-soft:#1d2f3f; --acc-on:#071b2b;
+  --sheet:rgba(7,27,43,.68); --sway:rgba(255,233,168,.32);
   --line-strong:#2a4a63; --line:#16293a; --line-subtle:#0f2131;
   --danger:#ff7a63; --dup:#ffd749; --star:#ffd749; --ok:#8fbc7a; --busy:#ffd749;
   --toast-bg:#0d2438; --toast-fg:#ffe9a8;
@@ -34,6 +36,7 @@ body{margin:0;overflow-x:hidden;padding-right:136px;background:var(--paper);colo
   font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;}
 .wrap{max-width:860px;margin:0 auto;padding:28px 20px 120px;}
+#view-list{background:var(--sheet);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border-radius:4px;box-shadow:0 18px 48px rgba(7,27,43,.07)}
 header{position:sticky;top:0;z-index:6;background:transparent;padding:20px 0 16px;width:100%}
 header::before{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;z-index:-1;background:transparent;border-bottom:1px solid transparent;transition:background .22s ease,border-color .22s ease,box-shadow .22s ease}border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
 header::after{content:none}
@@ -90,7 +93,7 @@ html[data-theme="night"] .bgfx{--blind:rgba(255,233,168,.05); --blind-soft:rgba(
 .bgfx .glow{position:absolute;left:0;top:0;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;
   background:radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,.62) 32%, rgba(255,255,255,.18) 56%, rgba(255,255,255,0) 72%);
   mix-blend-mode:overlay;transform:translate3d(var(--bx,50vw),var(--by,45vh),0);will-change:transform}
-.bgfx .dots{position:absolute;inset:0;background-image:radial-gradient(rgba(31,26,20,.16) 1px, transparent 1px);background-size:22px 22px;opacity:.55;-webkit-mask-image:radial-gradient(circle 240px at var(--bx,50vw) var(--by,45vh), #000 0%, transparent 72%);mask-image:radial-gradient(circle 240px at var(--bx,50vw) var(--by,45vh), #000 0%, transparent 72%)}
+.bgfx #bgSway{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.9}
 .wrap{position:relative;z-index:1}
 .split{position:fixed;inset:0;z-index:200;pointer-events:none;display:flex}
 .split .pane{position:absolute;top:0;bottom:0;left:0;width:100%;background:var(--paper-2);will-change:transform,clip-path}
@@ -335,7 +338,7 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
 </style>
 </head>
 <body class="ro">
-<div class="bgfx" id="bgfx"><span class="glow"></span><span class="dots"></span></div>
+<div class="bgfx" id="bgfx"><canvas id="bgSway"></canvas><span class="glow"></span></div>
 <div class="ripple-layer" id="rippleLayer"></div>
 <div class="split" id="split"><div class="pane l"></div><div class="pane r"></div><span class="seam" id="seam"></span></div>
 <div class="progress" id="prog"></div>
@@ -1754,6 +1757,56 @@ document.addEventListener("pointerdown", e=>{
     setTimeout(()=>s.remove(),life);
   });
 }, {passive:true});
+
+/* 背景：细线随风摆（光标附近摆幅大） */
+(function(){
+  const cv=document.getElementById("bgSway");
+  if(!cv) return;
+  const ctx=cv.getContext("2d");
+  const coarse = window.matchMedia && matchMedia("(pointer: coarse)").matches;
+  let W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2), t=0, raf=null;
+  let mx=-9999, my=-9999;
+  function resize(){
+    W=innerWidth; H=innerHeight;
+    cv.width=W*dpr; cv.height=H*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  resize();
+  addEventListener("resize", ()=>{ resize(); if(!raf) loop(); }, {passive:true});
+  addEventListener("mousemove", e=>{ mx=e.clientX; my=e.clientY; }, {passive:true});
+  addEventListener("mouseleave", ()=>{ mx=my=-9999; }, {passive:true});
+  function color(){
+    const v=getComputedStyle(document.documentElement).getPropertyValue("--sway").trim();
+    return v || "rgba(7,27,43,.16)";
+  }
+  let stroke=color();
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    const gap=26;
+    stroke = color();
+    t += coarse ? 0.004 : 0.012;
+    for(let x=gap/2;x<W;x+=gap){
+      const dx = x-mx;
+      const near = Math.abs(dx) < 160 ? (1-Math.abs(dx)/160) : 0;
+      const base = 2.5 + Math.sin(x*0.021 + t*0.9)*1.6;
+      const amp = base + near*near*22;
+      ctx.beginPath();
+      ctx.strokeStyle = stroke;
+      ctx.globalAlpha = 0.7 + near*0.3;
+      ctx.lineWidth = 1;
+      const step = coarse ? 12 : 7;
+      for(let y=-10;y<=H+10;y+=step){
+        const px = x + Math.sin(y*0.018 + t*1.4 + x*0.035)*amp
+                     + Math.sin(y*0.007 - t*0.7)*amp*0.5;
+        y===-10 ? ctx.moveTo(px,y) : ctx.lineTo(px,y);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    raf = requestAnimationFrame(loop);
+  }
+  loop();
+})();
 
 /* 背景光斑跟随鼠标 */
 (function(){
