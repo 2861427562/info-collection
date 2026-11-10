@@ -44,6 +44,8 @@ header.scrolled{box-shadow:0 12px 26px rgba(30,24,18,.12);border-bottom-color:va
 
 .hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:none;margin:0;padding:0}
 .logo{width:26px;height:26px;flex:none;display:block;margin-right:-4px}
+.shelf{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;color:var(--acc);text-decoration:none;border:1px solid var(--acc-soft);border-radius:2px;padding:2px 8px;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.shelf:hover{background:var(--acc);color:var(--acc-on);border-color:var(--acc)}
 .hleft{display:flex;align-items:baseline;gap:12px;min-width:0;flex:1 1 auto;overflow:hidden}
 h1{font-family:var(--serif);font-size:1.6rem;font-weight:600;line-height:1.2;letter-spacing:.04em;margin:0;color:var(--ink);white-space:nowrap}
 .count{font-family:var(--mono);font-size:.75rem;letter-spacing:.04em;color:var(--helper);white-space:nowrap}
@@ -342,6 +344,7 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
     <h1>信息收集</h1>
         <span class="count" id="count"></span>
         <span class="sync" id="sync">连接中…</span>
+        <a class="shelf" href="manga.html">漫画 ↗</a>
       </div>
       <div class="hright">
         <input id="q" placeholder="搜名字…" autocomplete="off">
