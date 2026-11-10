@@ -59,8 +59,9 @@ h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;l
 .hoverimg.on{opacity:1;transform:none}
 .hoverimg img{display:block;max-width:340px;max-height:340px;border-radius:1px}
 .item .thumb{cursor:zoom-in}
-.ripple{position:absolute;border-radius:50%;pointer-events:none;background:currentColor;opacity:.13;transform:scale(0);animation:rip .52s cubic-bezier(.2,.8,.2,1) forwards}
-@keyframes rip{to{transform:scale(1);opacity:0}}
+.ripple-layer{position:fixed;inset:0;pointer-events:none;z-index:150;overflow:hidden}
+.cwave{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;background:var(--acc);opacity:.16;transform:scale(.12);animation:cwave .62s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes cwave{55%{opacity:.1}to{transform:scale(1);opacity:0}}
 .split{position:fixed;inset:0;z-index:200;pointer-events:none;display:flex}
 .split .half{flex:1;background:var(--paper-2);will-change:transform,opacity}
 .split .half.l{box-shadow:inset -1px 0 0 var(--line),10px 0 30px rgba(31,26,20,.06)}
@@ -265,6 +266,7 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
 </style>
 </head>
 <body class="ro">
+<div class="ripple-layer" id="rippleLayer"></div>
 <div class="split" id="split"><span class="half l"></span><span class="half r"></span></div>
 <div class="progress" id="prog"></div>
 <div class="wrap" id="view-list">
@@ -1520,18 +1522,17 @@ window.addEventListener("scroll", ()=>{
 }, {passive:true});
 totopBtn.onclick=()=>{ window.scrollTo({top:0,behavior:"smooth"}); };
 
-/* 点按水波 */
+/* 点按水波（全局，点空白也有） */
 document.addEventListener("pointerdown", e=>{
-  const host=e.target.closest(".sbtn,.chip,.ftag,.morebtn,#roll,#add,#import,#export,#reset,#unlock,#backup,#stats,#dups,#multi,#totop,#theme,.back");
-  if(!host) return;
-  const r=host.getBoundingClientRect();
-  const size=Math.max(r.width,r.height)*2.2;
-  if(getComputedStyle(host).position==="static") host.style.position="relative";
+  if(typeof e.button==="number" && e.button!==0) return;
+  const layer=document.getElementById("rippleLayer");
+  if(!layer) return;
   const s=document.createElement("span");
-  s.className="ripple";
-  s.style.cssText="width:"+size+"px;height:"+size+"px;left:"+(e.clientX-r.left-size/2)+"px;top:"+(e.clientY-r.top-size/2)+"px";
-  host.appendChild(s);
-  setTimeout(()=>s.remove(),540);
+  s.className="cwave";
+  s.style.left=e.clientX+"px";
+  s.style.top=e.clientY+"px";
+  layer.appendChild(s);
+  setTimeout(()=>s.remove(),660);
 }, {passive:true});
 
 /* 进站：两片纸从中间分开、边分边转 */
