@@ -140,7 +140,7 @@ h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;l
 .imain{flex:1;min-width:0}
 .item .top{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0}
 .item .top .badge{flex:none}
-.item .nm{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .nm{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .item .nm{font-family:var(--serif);font-size:1.1rem;font-weight:600;word-break:break-all;color:var(--ink)}
 .item.dup .nm{color:var(--dup)}
 .item .go{margin-left:auto;background:transparent;border:none;color:var(--line-strong);font-size:20px;line-height:1;cursor:pointer;padding:0 4px;transition:transform .22s cubic-bezier(.2,.8,.2,1),color .15s}
@@ -937,6 +937,7 @@ function refresh(){
     irow.appendChild(go);
     imain.appendChild(top);
     irow.appendChild(imain);
+    if(go && go.parentElement===irow) irow.appendChild(go);
     div.appendChild(irow);
     if(opened.has(d)) div.appendChild(expandNode(d));
     div.onclick=()=>{
