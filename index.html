@@ -728,10 +728,11 @@ function toggleOpen(d){
   const item=el.closest(".item");
   if(item) item.classList.remove("open");
   const h=el.offsetHeight;
+  el.style.overflow="hidden";
   const panel=el.querySelector(".panel");
   if(panel) panel.animate([{opacity:1},{opacity:0}],{duration:170,easing:"ease-in"});
-  const a=el.animate([{height:h+"px",opacity:1},{height:"0px",opacity:0}],{duration:320,easing:"cubic-bezier(.4,0,.2,1)"});
-  a.onfinish=()=>refresh();
+  const a=el.animate([{height:h+"px",opacity:1},{height:"0px",opacity:0}],{duration:280,easing:"cubic-bezier(.4,0,.2,1)"});
+  a.onfinish=()=>{ el.remove(); };
 }
 function animateExpand(d){
   const sel = d && d._id ? '.item[data-id="'+d._id+'"] .expand' : ".item.open .expand";
