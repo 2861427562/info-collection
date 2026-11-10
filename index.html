@@ -585,6 +585,28 @@ function setStatus(kind, msg){
   el.textContent = msg || (kind==="ok" ? "已同步云端" : kind==="busy" ? "同步中…" : "离线");
 }
 
+let MANGA_MAP = null;
+fetch("manga.json?t=" + Date.now(), { cache: "no-store" })
+  .then(r => r.json())
+  .then(j => {
+    MANGA_MAP = new Map();
+    (j.series || []).forEach(s => { MANGA_MAP.set(normName(s.name), s); });
+  })
+  .catch(() => { MANGA_MAP = new Map(); });
+function normName(s){
+  return (s || "").toLowerCase().replace(/[\s\[\]【】()（）「」『』·・_\-—~～!！?？,，.。:：;；'"“”]/g, "");
+}
+function mangaMatch(name){
+  if(!MANGA_MAP) return null;
+  const key = normName(name);
+  let hit = MANGA_MAP.get(key);
+  if(hit) return hit;
+  for(const [k, v] of MANGA_MAP){
+    if(k.length > 3 && (key.includes(k) || k.includes(key))) return v;
+  }
+  return null;
+}
+
 let PW_VIEW = sessionStorage.getItem("pw_view")||"";
 let PW_EDIT = sessionStorage.getItem("pw_edit")||"";
 let CAN_EDIT = false;
@@ -1080,6 +1102,15 @@ function renderDetail(d){
 
   const links=document.getElementById("d-links"); links.innerHTML="";
   const lab=document.createElement("div"); lab.className="lab"; lab.textContent="链接"; links.appendChild(lab);
+  const mg = (d["类型"] === "漫画") ? mangaMatch(d["名字"] || "") : null;
+  if(mg){
+    const a = document.createElement("a");
+    a.className = "btnlink";
+    a.href = "manga.html?read=" + encodeURIComponent(mg.slug);
+    a.textContent = "在漫画页阅读 ↗";
+    a.style.marginLeft = "8px";
+    links.appendChild(a);
+  }
   if(d["链接"]){
     const a=document.createElement("a"); a.className="btnlink"; a.href=d["链接"]; a.target="_blank"; a.rel="noreferrer";
     a.textContent="打开链接 ↗"; links.appendChild(a);
