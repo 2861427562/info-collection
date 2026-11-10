@@ -47,7 +47,10 @@ a{color:inherit}
 .card .t{margin-top:7px;font-family:'Source Serif 4','Noto Serif SC',serif;font-size:.78rem;
   line-height:1.4;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card .m{font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--helper);margin-top:2px}
-.empty{color:var(--helper);text-align:center;padding:60px 0;font-size:.9rem}
+.empty{color:var(--helper);text-align:center;padding:80px 16px;font-size:.9rem}
+.emptyBox{max-width:420px;margin:0 auto;border:1px dashed var(--line);border-radius:4px;padding:38px 26px;background:var(--sheet)}
+.emptyTitle{font-size:1.15rem;color:var(--ink);margin-bottom:10px}
+.emptyHint{line-height:1.9;font-size:.82rem;margin-bottom:18px}
 
 /* 阅读器 */
 #reader{position:fixed;inset:0;z-index:60;background:var(--page-bg);display:none;overflow-y:auto;
@@ -93,7 +96,13 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 
 <div class="wrap">
   <div class="grid" id="grid"></div>
-  <div class="empty" id="empty">正在读目录…</div>
+  <div class="empty" id="empty">
+    <div class="emptyBox">
+      <div class="emptyTitle serif">书架还空着</div>
+      <div class="emptyHint">在电脑上双击桌面的「上传漫画.bat」，选一个文件夹就能传上来。<br>传完这个页面会自动出现那一部。</div>
+      <button class="icon" id="reloadBtn">刷新书架</button>
+    </div>
+  </div>
 </div>
 
 <div id="reader">
@@ -140,7 +149,7 @@ function renderShelf(){
   const list = INDEX.series || [];
   stat.textContent = list.length + " 部";
   document.getElementById("empty").style.display = list.length ? "none" : "block";
-  document.getElementById("empty").textContent = list.length ? "" : "还没有上传完的漫画";
+
   grid.innerHTML = "";
   list.forEach(s => {
     const pages = s.chapters.reduce((a,c)=>a+c.count,0);
@@ -276,6 +285,7 @@ fetch("manga.json?t=" + Date.now(), { cache: "no-store" })
   .catch(() => {
     document.getElementById("empty").textContent = "目录没读到（manga.json 还没生成）";
   });
+document.getElementById("reloadBtn").onclick = () => location.reload();
 </script>
 </body>
 </html>
