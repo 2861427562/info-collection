@@ -889,6 +889,8 @@ function refresh(){
     const nm=document.createElement("span"); nm.className="nm"; nm.textContent=d["名字"];
     if(coverOf(d)){
       const im=document.createElement("img"); im.className="thumb"; im.src=coverOf(d); im.loading="lazy"; im.alt="";
+      im.referrerPolicy="no-referrer";
+      im.onerror=()=>im.remove();
       im.onmouseenter=()=>showHoverImage(im, coverOf(d));
       im.onmouseleave=hideHoverImage;
       top.appendChild(im);
@@ -1041,12 +1043,13 @@ function renderWall(){
   list.forEach(d=>{
     const card=document.createElement("div"); card.className="gcard";
     const cov=document.createElement("div"); cov.className="gcover";
+    const ph=document.createElement("div"); ph.className="ph"; ph.textContent=d["名字"]||"";
+    cov.appendChild(ph);
     if(coverOf(d)){
       const im=document.createElement("img"); im.src=coverOf(d); im.loading="lazy"; im.alt="";
+      im.referrerPolicy="no-referrer";
+      im.onerror=()=>im.remove();
       cov.appendChild(im);
-    }else{
-      const ph=document.createElement("div"); ph.className="ph"; ph.textContent=d["名字"]||"";
-      cov.appendChild(ph);
     }
     if(d["进度"]){ const pg=document.createElement("span"); pg.className="prog"; pg.textContent=d["进度"]; cov.appendChild(pg); }
     const nm=document.createElement("div"); nm.className="gname"; nm.textContent=d["名字"]||"";
