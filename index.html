@@ -34,9 +34,12 @@ body{margin:0;padding-right:136px;background:var(--paper);color:var(--body);
   font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;}
 .wrap{max-width:860px;margin:0 auto;padding:28px 20px 120px;}
-header{position:sticky;top:0;z-index:6;background:transparent;padding:12px 0;border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
-header.scrolled{border-bottom-color:var(--line-subtle);background:linear-gradient(var(--paper) 62%,rgba(240,230,210,0));box-shadow:0 6px 18px rgba(31,26,20,.04)}
+header{position:sticky;top:0;z-index:6;background:transparent;padding:20px 0 16px;border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:16px;pointer-events:none;background:linear-gradient(var(--paper),rgba(0,0,0,0));opacity:0;transition:opacity .22s ease}
+header.scrolled{border-bottom-color:var(--line-subtle);background:var(--paper);box-shadow:0 10px 26px rgba(7,27,43,.10)}
+header.scrolled::after{opacity:1}
 .hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:26px;height:26px;flex:none;display:block;margin-right:-4px}
 .hleft{display:flex;align-items:baseline;gap:12px;min-width:0;flex:1 1 auto;overflow:hidden}
 h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;letter-spacing:.01em;margin:0;color:var(--ink);white-space:nowrap}
 .count{font-family:var(--mono);font-size:.75rem;letter-spacing:.04em;color:var(--helper);white-space:nowrap}
@@ -65,7 +68,20 @@ h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;l
 .cwave.dot{width:14px;height:14px;margin:-7px 0 0 -7px;border:0;background:var(--acc);animation:cdots .24s ease-out forwards}
 @keyframes cwave{0%{opacity:.28;transform:scale(.15)}100%{opacity:0;transform:scale(1)}}
 @keyframes cdots{0%{opacity:.24;transform:scale(.4)}100%{opacity:0;transform:scale(1.7)}}
-.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  --blind:rgba(7,27,43,.055); --blind-2:rgba(7,27,43,.022); --blind-hi:rgba(255,255,255,.35)}
+html[data-theme="night"] .bgfx{--blind:rgba(255,233,168,.06); --blind-2:rgba(255,233,168,.025); --blind-hi:rgba(255,215,73,.10)}
+.bgfx .blinds{position:absolute;inset:-2px;
+  background-image:repeating-linear-gradient(90deg,
+    var(--blind-2) 0px, var(--blind-2) 1px,
+    rgba(0,0,0,0) 1px, rgba(0,0,0,0) 5px,
+    var(--blind) 5px, var(--blind) 6px,
+    rgba(0,0,0,0) 6px, rgba(0,0,0,0) 8px)}
+.bgfx .blindlight{position:absolute;top:-10%;bottom:-10%;left:-45%;width:190%;
+  background:linear-gradient(100deg,
+    rgba(0,0,0,0) 34%, var(--blind-hi) 47%, rgba(0,0,0,0) 58%);
+  animation:blindmove 52s ease-in-out infinite alternate;will-change:transform}
+@keyframes blindmove{from{transform:translateX(-11%)}to{transform:translateX(11%)}}
 .bgfx .glow{position:absolute;left:0;top:0;width:620px;height:620px;margin:-310px 0 0 -310px;border-radius:50%;background:radial-gradient(circle, rgba(143,118,80,.17) 0%, rgba(143,118,80,0) 68%);transform:translate3d(var(--bx,50vw),var(--by,45vh),0);will-change:transform}
 .bgfx .dots{position:absolute;inset:0;background-image:radial-gradient(rgba(31,26,20,.16) 1px, transparent 1px);background-size:22px 22px;opacity:.55;-webkit-mask-image:radial-gradient(circle 240px at var(--bx,50vw) var(--by,45vh), #000 0%, transparent 72%);mask-image:radial-gradient(circle 240px at var(--bx,50vw) var(--by,45vh), #000 0%, transparent 72%)}
 .wrap{position:relative;z-index:1}
@@ -312,7 +328,7 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
 </style>
 </head>
 <body class="ro">
-<div class="bgfx" id="bgfx"><span class="glow"></span><span class="dots"></span></div>
+<div class="bgfx" id="bgfx"><span class="blinds"></span><span class="blindlight"></span><span class="glow"></span><span class="dots"></span></div>
 <div class="ripple-layer" id="rippleLayer"></div>
 <div class="split" id="split"><div class="pane l"></div><div class="pane r"></div><span class="seam" id="seam"></span></div>
 <div class="progress" id="prog"></div>
@@ -320,7 +336,8 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
   <header id="hdr">
     <div class="hrow">
       <div class="hleft">
-        <h1>信息收集</h1>
+        <svg class="logo" viewBox="0 0 56 56" aria-hidden="true"><rect x="6" y="16" width="7" height="30" fill="var(--line-strong)"/><rect x="16" y="10" width="7" height="36" fill="var(--acc)"/><rect x="26" y="20" width="7" height="26" fill="var(--acc-ink)"/><rect x="36" y="14" width="7" height="32" fill="var(--acc-soft)"/><rect x="46" y="22" width="4" height="24" fill="var(--line-strong)"/></svg>
+    <h1>信息收集</h1>
         <span class="count" id="count"></span>
         <span class="sync" id="sync">连接中…</span>
       </div>
