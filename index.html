@@ -82,6 +82,9 @@ h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;l
 .wallhead .n{font-family:var(--mono);font-size:.7rem;letter-spacing:.05em;color:var(--helper)}
 .wallhead .tg{margin-left:auto;border:1px solid var(--line-strong);background:transparent;color:var(--sec);font-family:var(--sans);font-size:.75rem;padding:4px 12px;border-radius:3px;cursor:pointer;transition:border-color .15s,color .15s}
 .wallhead .tg:hover{border-color:var(--acc);color:var(--acc)}
+.wallhead .ic{border:0;background:transparent;color:var(--helper);font-size:15px;line-height:1;padding:0 4px;cursor:pointer;transition:color .15s,transform .3s ease}
+.wallhead .ic:hover{color:var(--acc)}
+.wallhead .ic.spin{transform:rotate(360deg)}
 .wallgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;transition:opacity .2s ease,max-height .4s cubic-bezier(.22,1,.36,1),margin-bottom .3s ease;overflow:hidden;transition:max-height .4s cubic-bezier(.22,1,.36,1),opacity .26s ease,margin-bottom .3s ease}
 .wall.closed .wallgrid{opacity:0;margin-bottom:0}
 .gcard{cursor:pointer}
@@ -331,7 +334,7 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
     <div class="wallhead">
       <h2>Galgame</h2>
       <span class="n" id="walln"></span>
-      <button class="tg" id="wallshuffle">换一批</button>
+      <button class="ic" id="wallshuffle" title="换一批" aria-label="换一批">↻</button>
       <button class="tg" id="walltoggle">收起</button>
     </div>
     <div class="wallgrid" id="wallgrid"></div>
@@ -1091,9 +1094,11 @@ function shuffleWall(){
   window.__wallPick=arr.slice(0,12);
   return window.__wallPick;
 }
-document.getElementById("wallshuffle").onclick=()=>{
+document.getElementById("wallshuffle").onclick=(ev)=>{
   const grid=document.getElementById("wallgrid");
   if(!grid) return;
+  const btn=ev.currentTarget;
+  if(btn){ btn.classList.add("spin"); setTimeout(()=>btn.classList.remove("spin"),320); }
   grid.style.opacity="0";
   setTimeout(()=>{
     window.__wallPick=null;
