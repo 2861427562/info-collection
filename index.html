@@ -1416,7 +1416,7 @@ window.addEventListener("scroll", ()=>{
   const y=window.scrollY||0;
   totopBtn.classList.toggle("on", y>600);
   const hdr=document.getElementById("hdr");
-  if(hdr) hdr.classList.toggle("collapsed", y>170);
+  if(hdr) hdr.classList.toggle("collapsed", y>16);
 }, {passive:true});
 totopBtn.onclick=()=>{ window.scrollTo({top:0,behavior:"smooth"}); };
 
