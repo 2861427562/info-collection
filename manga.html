@@ -228,7 +228,15 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 
 <script>
 /* ========== 配置 ========== */
-let WORKER = localStorage.getItem("manga_worker") || "https://manga-upload.ygylyp.workers.dev";
+const WORKER_DEFAULT = "https://manga-upload.ygylyp.workers.dev";
+function normWorker(u){
+  if(!u) return "";
+  u = u.trim().replace(/\/+$/, "");
+  if(!/^https?:\/\//i.test(u)) u = "https://" + u;
+  u = u.replace(/^http:\/\//i, "https://");
+  return u;
+}
+let WORKER = normWorker(localStorage.getItem("manga_worker_v2") || WORKER_DEFAULT);
 const R2_BASE = "https://pub-84db0f3292924614bfb2c03bf14a4e4f.r2.dev";
 const SB_URL = "https://jriobiugqjsejpctzhuj.supabase.co";
 const SB_KEY = "sb_publishable_X3ZdlVAhNlUouEiEB7HM0g_VHjgcpJ8";
@@ -322,6 +330,7 @@ async function worker(act, params, body, contentType){
     body
   });
   if(r.status === 403) throw new Error("口令不对");
+  if(r.status === 405) throw new Error("地址不对（要用 https:// 开头）");
   if(!r.ok) throw new Error("worker " + r.status);
   const txt = await r.text();
   try{ return JSON.parse(txt); }catch(e){ return { ok: true }; }
@@ -444,10 +453,10 @@ const dropEl = document.getElementById("drop");
 
 upBtn.onclick = () => {
   if(!WORKER){
-    const u = prompt("第一次用，先填 Worker 地址（形如 https://xxx.workers.dev）");
+    const u = prompt("Worker 地址（一般不用改）", WORKER);
     if(!u) return;
-    WORKER = u.replace(/\/+$/, "");
-    localStorage.setItem("manga_worker", WORKER);
+    WORKER = normWorker(u);
+    localStorage.setItem("manga_worker_v2", WORKER);
   }
   upPanel.classList.add("on");
 };
