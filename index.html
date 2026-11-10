@@ -34,11 +34,15 @@ body{margin:0;background:var(--paper);color:var(--body);
   font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;}
 .wrap{max-width:860px;margin:0 auto;padding:28px 20px 120px;}
-header{position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--line-subtle);padding:14px 0 16px;z-index:5}
+header{position:static;background:transparent;border-bottom:0;padding:14px 0 6px;z-index:5}
 .toprow{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
 h1{font-family:var(--serif);font-size:1.85rem;font-weight:600;line-height:1.3;letter-spacing:.01em;margin:0;color:var(--ink);}
-.themebtn{position:absolute;right:0;top:0;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font-size:14px;line-height:1;cursor:pointer;transition:border-color .15s,color .15s}
+.themebtn{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font-size:14px;line-height:1;cursor:pointer;transition:border-color .15s,color .15s}
 .themebtn:hover{border-color:var(--acc);color:var(--acc)}
+.searchbar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:10px;background:var(--paper);padding:10px 0;border-bottom:1px solid var(--line-subtle)}
+.searchbar input{flex:1;min-width:0;padding:8px 2px;border:0;border-bottom:1px solid var(--line-strong);background:transparent;color:var(--ink);font-family:var(--serif);font-size:1.15rem;outline:none;border-radius:0;transition:border-color .15s}
+.searchbar input::placeholder{color:var(--helper)}
+.searchbar input:focus{border-bottom:2px solid var(--acc)}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
 .tools button,.tools select{border:1px solid var(--line-strong);background:transparent;color:var(--ink);
   padding:6px 14px;border-radius:3px;cursor:pointer;font-size:.8125rem;line-height:1.5;
@@ -143,9 +147,7 @@ h1{font-family:var(--serif);font-size:1.85rem;font-weight:600;line-height:1.3;le
 #view-list{transition:transform .38s cubic-bezier(.22,1.2,.36,1)}
 #view-list.pulling{transition:none}
 header.collapsed h1,header.collapsed .tools,header.collapsed .count,header.collapsed .sync{display:none}
-header.collapsed{padding:8px 0 10px}
-header.collapsed .search{margin:0}
-.back{color:var(--acc);cursor:pointer;font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;display:inline-block}
+header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;display:inline-block}
 .detail .head{background:transparent;border:0;border-bottom:2px solid var(--line-strong);border-radius:0;padding:0 0 20px;margin-bottom:6px}
 .detail .head .nm{font-family:var(--serif);font-size:1.8rem;font-weight:600;word-break:break-all;color:var(--ink);line-height:1.35}
 .detail .head .meta{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
@@ -218,9 +220,7 @@ header.collapsed .search{margin:0}
   <header id="hdr">
     <div class="toprow">
       <h1>信息收集</h1>
-      <button class="themebtn" id="theme" title="切换主题">☾</button>
     </div>
-    <div class="search"><input id="q" placeholder="搜名字…" autocomplete="off"></div>
     <div class="tools">
       <select id="sort">
         <option value="none">默认顺序</option>
@@ -243,6 +243,10 @@ header.collapsed .search{margin:0}
     <div class="count" id="count"></div>
     <div class="sync" id="sync">连接中…</div>
   </header>
+  <div class="searchbar" id="sbar">
+    <input id="q" placeholder="搜名字…" autocomplete="off">
+    <button class="themebtn" id="theme" title="切换主题">☾</button>
+  </div>
   <div class="frow"><div class="lab">类型</div><div class="chips" id="f-type"></div></div>
   <div class="frow"><div class="lab">平台</div><div class="chips" id="f-platform"></div></div>
   <div class="frow"><div class="lab">进度</div><div class="chips" id="f-progress"></div></div>
@@ -1415,8 +1419,6 @@ const totopBtn=document.getElementById("totop");
 window.addEventListener("scroll", ()=>{
   const y=window.scrollY||0;
   totopBtn.classList.toggle("on", y>600);
-  const hdr=document.getElementById("hdr");
-  if(hdr) hdr.classList.toggle("collapsed", y>16);
 }, {passive:true});
 totopBtn.onclick=()=>{ window.scrollTo({top:0,behavior:"smooth"}); };
 
