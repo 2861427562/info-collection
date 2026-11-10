@@ -309,7 +309,11 @@ async function loadCollection(){
   return all;
 }
 async function loadIndex(){
-  // 优先 R2 上的 index.json（上传后由 worker 写），退回本地 manga.json
+  // 目录优先问 Worker（不受 R2 跨域限制），再退回 R2 直连、本地 manga.json
+  try{
+    const r = await fetch(WORKER + "/index.json?t=" + Date.now(), {cache:"no-store"});
+    if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
+  }catch(e){}
   try{
     const r = await fetch(R2_BASE + "/index.json?t=" + Date.now(), {cache:"no-store"});
     if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
