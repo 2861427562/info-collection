@@ -36,9 +36,9 @@ body{margin:0;overflow-x:hidden;padding-right:136px;background:var(--paper);colo
 .wrap{max-width:860px;margin:0 auto;padding:28px 20px 120px;}
 header{position:sticky;top:0;z-index:6;background:transparent;padding:20px 0 16px;width:100%}
 header::before{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;z-index:-1;background:transparent;border-bottom:1px solid transparent;transition:background .22s ease,border-color .22s ease,box-shadow .22s ease}border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
-header::after{content:"";position:absolute;left:calc(50% - 50vw);width:100vw;bottom:-16px;height:16px;pointer-events:none;background:linear-gradient(var(--paper),rgba(0,0,0,0));opacity:0;transition:opacity .22s ease}
+header::after{content:none}
 header.scrolled::before{background:var(--paper);border-bottom-color:var(--line-subtle);box-shadow:0 10px 26px rgba(7,27,43,.10)}
-header.scrolled::after{opacity:1}
+
 .hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:860px;margin:0 auto;padding:0 20px}
 .logo{width:26px;height:26px;flex:none;display:block;margin-right:-4px}
 .hleft{display:flex;align-items:baseline;gap:12px;min-width:0;flex:1 1 auto;overflow:hidden}
@@ -70,15 +70,18 @@ h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;l
 @keyframes cwave{0%{opacity:.28;transform:scale(.15)}100%{opacity:0;transform:scale(1)}}
 @keyframes cdots{0%{opacity:.24;transform:scale(.4)}100%{opacity:0;transform:scale(1.7)}}
 .bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
-  --blind:rgba(7,27,43,.05); --blind-seam:rgba(7,27,43,.075); --blind-hi:rgba(255,255,255,.55); --blind-deep:rgba(7,27,43,.085)}
-html[data-theme="night"] .bgfx{--blind:rgba(255,233,168,.05); --blind-seam:rgba(0,0,0,.28); --blind-hi:rgba(255,215,73,.14); --blind-deep:rgba(0,0,0,.30)}
+  --blind:rgba(7,27,43,.05); --blind-soft:rgba(7,27,43,.028); --blind-seam:rgba(7,27,43,.075);
+  --blind-hi:rgba(255,255,255,.5); --blind-deep:rgba(7,27,43,.09)}
+html[data-theme="night"] .bgfx{--blind:rgba(255,233,168,.05); --blind-soft:rgba(255,233,168,.028);
+  --blind-seam:rgba(0,0,0,.28); --blind-hi:rgba(255,215,73,.13); --blind-deep:rgba(0,0,0,.32)}
 .bgfx .blinds{position:absolute;inset:-2px;
   background-image:repeating-linear-gradient(90deg,
-    var(--blind-seam) 0px, var(--blind-seam) 1px,
-    var(--blind-hi) 1px, var(--blind-hi) 3px,
-    var(--blind) 3px, var(--blind) 6px,
-    var(--blind-deep) 6px, var(--blind-deep) 7.4px,
-    var(--blind-seam) 7.4px, var(--blind-seam) 8px)}
+    var(--blind-seam) 0px, var(--blind-seam) 2px,
+    var(--blind-hi) 2px, var(--blind-hi) 7px,
+    var(--blind-soft) 7px, var(--blind-soft) 22px,
+    var(--blind) 22px, var(--blind) 40px,
+    var(--blind-deep) 40px, var(--blind-deep) 50px,
+    var(--blind-seam) 50px, var(--blind-seam) 52px)}
 .bgfx .blindlight{position:absolute;top:-10%;bottom:-10%;left:-45%;width:190%;
   background:linear-gradient(100deg,
     rgba(0,0,0,0) 34%, var(--blind-hi) 47%, rgba(0,0,0,0) 58%);
