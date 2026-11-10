@@ -33,7 +33,7 @@ body{margin:0;background:var(--paper);color:var(--body);
   font-family:var(--sans);font-size:1.0625rem;line-height:1.7;
   font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;}
-.wrap{max-width:860px;margin:0 auto;padding:28px 20px 120px;}
+.wrap{max-width:920px;margin:0 auto;padding:28px 136px 120px 20px;}
 header{position:static;background:transparent;border-bottom:0;padding:14px 0 6px;z-index:5}
 .toprow{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
 h1{font-family:var(--serif);font-size:1.85rem;font-weight:600;line-height:1.3;letter-spacing:.01em;margin:0;color:var(--ink);}
@@ -111,10 +111,9 @@ h1{font-family:var(--serif);font-size:1.85rem;font-weight:600;line-height:1.3;le
 .swiper.open .swipe-del{transform:translateX(0)}
 .item{background:var(--paper);border:0;border-bottom:1px solid var(--line-subtle);border-radius:0;padding:14px 16px;margin-bottom:0;cursor:pointer;transition:transform .22s ease,background .12s;touch-action:pan-y}
 .item.shifted{transform:translateX(-88px)}
-.trash{position:fixed;left:20px;bottom:88px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);border-radius:3px;background:var(--paper);color:var(--helper);font-size:16px;opacity:0;transform:scale(.8);transition:opacity .2s ease,transform .2s ease;pointer-events:none;z-index:70}
+.trash{position:fixed;right:20px;bottom:78px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);border-radius:3px;background:var(--paper);color:var(--helper);font-size:16px;opacity:0;transform:scale(.8);transition:opacity .2s ease,transform .2s ease;pointer-events:none;z-index:70}
 .trash.on{opacity:1;transform:scale(1)}
 .morebtn{display:inline-block;margin:16px 0 4px;border:1px solid var(--line-strong);background:transparent;color:var(--ink);padding:9px 18px;border-radius:3px;font-size:.8125rem;cursor:pointer;font-family:var(--sans)}
-.ro #add,.ro #import,.ro #reset,.ro #multi,.ro #dups,
 .ro #d-edit,.ro #d-del,.ro #d-note-save,.ro .addimg,
 .ro .imgs .x,.ro .imgs .ctl,.ro .expand .acts,.ro .badge.pr,.ro .swipe-del{display:none!important}
 
@@ -144,6 +143,23 @@ h1{font-family:var(--serif);font-size:1.85rem;font-weight:600;line-height:1.3;le
 .totop{position:fixed;right:20px;bottom:20px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);border-radius:3px;background:var(--paper);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .22s,border-color .15s;z-index:25}
 .totop.on{opacity:1;pointer-events:auto}
 .totop:hover{border-color:var(--acc);color:var(--acc)}
+/* 右侧悬浮工具栏 */
+.side{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:6px;width:104px}
+.sbtn{width:100%;border:1px solid var(--line-strong);border-radius:3px;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:.75rem;line-height:1.45;padding:6px 8px;text-align:center;cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .15s,color .15s}
+select.sbtn{text-align:left;padding-right:20px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3L8 1' fill='none' stroke='%238a8275' stroke-width='1.3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
+.sbtn:hover{border-color:var(--acc);color:var(--acc)}
+.sbtn.primary{border-color:var(--acc);color:var(--acc);font-weight:600}
+.sbtn.danger{color:var(--helper)}
+.sbtn.danger:hover{color:var(--danger);border-color:var(--danger)}
+.sgrp{display:flex;flex-direction:column;gap:6px;max-height:0;opacity:0;overflow:hidden;transition:max-height .34s cubic-bezier(.22,1,.36,1),opacity .2s ease}
+body:not(.ro) .sgrp{max-height:260px;opacity:1}
+.sgrp .sbtn{opacity:0;transform:translateY(-6px);transition:opacity .22s ease,transform .22s ease}
+body:not(.ro) .sgrp .sbtn{opacity:1;transform:none}
+body:not(.ro) .sgrp .sbtn:nth-child(1){transition-delay:.05s}
+body:not(.ro) .sgrp .sbtn:nth-child(2){transition-delay:.09s}
+body:not(.ro) .sgrp .sbtn:nth-child(3){transition-delay:.13s}
+body:not(.ro) .sgrp .sbtn:nth-child(4){transition-delay:.17s}
+body:not(.ro) .sgrp .sbtn:nth-child(5){transition-delay:.21s}
 #view-list{transition:transform .38s cubic-bezier(.22,1.2,.36,1)}
 #view-list.pulling{transition:none}
 header.collapsed h1,header.collapsed .tools,header.collapsed .count,header.collapsed .sync{display:none}
@@ -207,11 +223,14 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
 .sync.err{color:var(--danger)}
 .sync.err::before{background:var(--danger)}
 @media (max-width:560px){
-  header{position:static;border-bottom:1px solid var(--line-subtle);padding:8px 0 10px}
+  header{padding:10px 0 6px}
   h1{font-size:1.5rem}
-  .tools{gap:6px}
-  .tools button,.tools select{padding:5px 10px;font-size:.75rem}
-  .wrap{padding-bottom:120px}
+  .wrap{padding:22px 96px 120px 16px}
+  .side{width:84px;right:8px;gap:5px}
+  .sbtn{font-size:.7rem;padding:5px 6px}
+  .fab{left:12px;bottom:14px;padding:11px 16px;font-size:.875rem}
+  .totop{right:8px;bottom:14px;width:40px;height:40px}
+  .trash{right:8px;bottom:64px;width:40px;height:40px}
 }
 </style>
 </head>
@@ -220,25 +239,6 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
   <header id="hdr">
     <div class="toprow">
       <h1>信息收集</h1>
-    </div>
-    <div class="tools">
-      <select id="sort">
-        <option value="none">默认顺序</option>
-        <option value="az">名称 A→Z</option>
-        <option value="za">名称 Z→A</option>
-        <option value="progress">按进度</option>
-        <option value="year">按年份（新→旧）</option>
-        <option value="updated">最近改过</option>
-      </select>
-      <button id="dups">重复</button>
-      <button id="import">导入</button>
-      <button id="stats">统计</button>
-      <button id="backup">备份</button>
-      <button id="multi">多选</button>
-      <button id="add">新增</button>
-      <button id="export">导出 CSV</button>
-      <button id="reset">重置</button>
-      <button id="unlock">解锁修改</button>
     </div>
     <div class="count" id="count"></div>
     <div class="sync" id="sync">连接中…</div>
@@ -298,6 +298,28 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
 
 <button class="fab" id="roll">抽一个</button>
 <div class="trash" id="trash" aria-hidden="true">🗑</div>
+
+<div class="side" id="side">
+  <select id="sort" class="sbtn" title="排序">
+    <option value="none">默认顺序</option>
+    <option value="az">名称 A→Z</option>
+    <option value="za">名称 Z→A</option>
+    <option value="progress">按进度</option>
+    <option value="year">按年份</option>
+    <option value="updated">最近改过</option>
+  </select>
+  <button id="stats" class="sbtn">统计</button>
+  <button id="backup" class="sbtn">备份</button>
+  <button id="export" class="sbtn">导出 CSV</button>
+  <button id="unlock" class="sbtn primary">解锁修改</button>
+  <div class="sgrp" id="sgrp">
+    <button id="dups" class="sbtn">重复</button>
+    <button id="import" class="sbtn">导入</button>
+    <button id="multi" class="sbtn">多选</button>
+    <button id="add" class="sbtn">新增</button>
+    <button id="reset" class="sbtn danger">重置</button>
+  </div>
+</div>
 
 <div class="selbar" id="selbar">
   <span class="cnt" id="selcount">已选 0 条</span>
