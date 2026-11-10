@@ -34,8 +34,8 @@ body{margin:0;padding-right:136px;background:var(--paper);color:var(--body);
   font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;}
 .wrap{max-width:860px;margin:0 auto;padding:28px 20px 120px;}
-header{position:sticky;top:0;z-index:6;background:var(--paper);padding:12px 0;border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease}
-header.scrolled{border-bottom-color:var(--line-subtle);box-shadow:0 6px 18px rgba(31,26,20,.05)}
+header{position:sticky;top:0;z-index:6;background:transparent;padding:12px 0;border-bottom:1px solid transparent;transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
+header.scrolled{border-bottom-color:var(--line-subtle);background:linear-gradient(var(--paper) 62%,rgba(240,230,210,0));box-shadow:0 6px 18px rgba(31,26,20,.04)}
 .hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .hleft{display:flex;align-items:baseline;gap:12px;min-width:0;flex:1 1 auto;overflow:hidden}
 h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;letter-spacing:.01em;margin:0;color:var(--ink);white-space:nowrap}
@@ -170,8 +170,8 @@ h1{font-family:var(--serif);font-size:1.55rem;font-weight:600;line-height:1.25;l
 /* 手机左滑露出删除 */
 .swiper{position:relative;overflow:hidden}
 .swiper .swipe-del{position:absolute;top:0;right:0;bottom:0;width:88px;display:flex;align-items:center;justify-content:center;border:0;background:var(--danger);color:var(--acc-on);font-family:var(--sans);font-size:.8125rem;font-weight:600;cursor:pointer;transform:translateX(100%);transition:transform .2s ease}
-.swiper.open .swipe-del{transform:translateX(0)}
-.item{position:relative;background:var(--paper);border:0;border-bottom:1px solid var(--line-subtle);border-radius:0;padding:13px 16px;margin-bottom:0;cursor:pointer;transition:transform .22s ease;touch-action:pan-y;contain:layout paint style;content-visibility:auto;contain-intrinsic-size:auto 62px}
+.swiper.open .swipe-del{transform:translateX(0)}\n.swiper.open .item{background:var(--paper)}
+.item{position:relative;background:transparent;border:0;border-bottom:1px solid var(--line-subtle);border-radius:0;padding:13px 16px;margin-bottom:0;cursor:pointer;transition:transform .22s ease;touch-action:pan-y;contain:layout paint style;content-visibility:auto;contain-intrinsic-size:auto 62px}
 .item::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:2px;background:var(--acc);transform:scaleY(0);transform-origin:top;transition:transform .18s ease}
 .item:hover::before{transform:scaleY(1)}
 .item .thumb{flex:none;width:56px;height:56px;border-radius:2px;object-fit:cover;border:1px solid var(--line);margin-right:10px}
@@ -528,8 +528,10 @@ function normItem(d){
   if(o["评分"]===undefined) o["评分"]=0;
   if(o["备注"]===undefined) o["备注"]="";
   if(o["链接"]===undefined) o["链接"]="";
+  if(o["封面"]===undefined) o["封面"]="";
   return o;
 }
+function coverOf(d){ return d["封面"] || ((d.images&&d.images[0])||"") ; }
 function stripId(d){ const c=Object.assign({}, d); delete c._id; delete c._s; delete c._i; return c; }
 function newId(){
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -885,9 +887,9 @@ function refresh(){
       top.appendChild(ck);
     }
     const nm=document.createElement("span"); nm.className="nm"; nm.textContent=d["名字"];
-    if((d.images||[]).length){
-      const im=document.createElement("img"); im.className="thumb"; im.src=d.images[0]; im.loading="lazy"; im.alt="";
-      im.onmouseenter=()=>showHoverImage(im, d.images[0]);
+    if(coverOf(d)){
+      const im=document.createElement("img"); im.className="thumb"; im.src=coverOf(d); im.loading="lazy"; im.alt="";
+      im.onmouseenter=()=>showHoverImage(im, coverOf(d));
       im.onmouseleave=hideHoverImage;
       top.appendChild(im);
     }
@@ -1039,8 +1041,8 @@ function renderWall(){
   list.forEach(d=>{
     const card=document.createElement("div"); card.className="gcard";
     const cov=document.createElement("div"); cov.className="gcover";
-    if((d.images||[]).length){
-      const im=document.createElement("img"); im.src=d.images[0]; im.loading="lazy"; im.alt="";
+    if(coverOf(d)){
+      const im=document.createElement("img"); im.src=coverOf(d); im.loading="lazy"; im.alt="";
       cov.appendChild(im);
     }else{
       const ph=document.createElement("div"); ph.className="ph"; ph.textContent=d["名字"]||"";
