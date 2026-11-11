@@ -337,10 +337,10 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
   .trash{right:8px;bottom:64px;width:40px;height:40px}
 }
 </style>
-<link rel="stylesheet" href="manga-detail.css?v=7">
+<link rel="stylesheet" href="manga-detail.css?v=8">
 </head>
 <body class="ro">
-<script src="manga-detail.js?v=7"></script>
+<script src="manga-detail.js?v=8"></script>
 <div class="bgfx" id="bgfx"><span class="grain"></span><span class="grain-lit"></span><span class="glow"></span></div>
 <div class="ripple-layer" id="rippleLayer"></div>
 <div class="split" id="split"><div class="pane l"></div><div class="pane r"></div><span class="seam" id="seam"></span></div>
@@ -628,6 +628,12 @@ async function saveMangaTags(slug, name, tags){
   }catch(e){ return false; }
 }
 
+function mergeTags(a, b){
+  const out = [];
+  (a || []).concat(b || []).forEach(t => { if(t && out.indexOf(t) < 0) out.push(t); });
+  return out;
+}
+
 function mangaTagsOf(slug, name){
   const m = window.__mangaTags;
   if(!m) return [];
@@ -900,9 +906,10 @@ function expandNode(d){
           chapters: __mg.chapters || [],
           meta: { "平台": d["平台"], "进度": d["进度"] },
           editableTags: true,
-          tags: mangaTagsOf(__mg.slug, __mg.name || d["名字"]).slice(),
+          tags: mergeTags(mangaTagsOf(__mg.slug, __mg.name || d["名字"]), d["标签"]),
           allTags: KNOWN_TAGS,
           onSaveTags: (tags) => saveMangaTags(__mg.slug, __mg.name || d["名字"], tags),
+          onTagClick: (t) => { location.href = "manga.html?tag=" + encodeURIComponent(t); },
           fields: mangaFields(d),
         });
       }
@@ -1150,9 +1157,10 @@ function openDetail(d){
         meta: { "平台": d["平台"], "进度": d["进度"] },
         progress: 0,
         editableTags: true,
-        tags: mangaTagsOf(mgGo.slug, mgGo.name || d["名字"]).slice(),
+        tags: mergeTags(mangaTagsOf(mgGo.slug, mgGo.name || d["名字"]), d["标签"]),
         allTags: KNOWN_TAGS,
         onSaveTags: (tags) => saveMangaTags(mgGo.slug, mgGo.name || d["名字"], tags),
+        onTagClick: (t) => { location.href = "manga.html?tag=" + encodeURIComponent(t); },
         fields: mangaFields(d),
       });
       return;
