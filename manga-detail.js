@@ -94,6 +94,55 @@
     // 信息表（仿 nhentai 那种 key: chips）
     const rows = r.querySelector(".mdrows");
     rows.innerHTML = "";
+
+    // 标签行（可编辑，前提是传了 editableTags）
+    if (o.editableTags) {
+      const row = document.createElement("div");
+      row.className = "mdrow";
+      const k = document.createElement("div");
+      k.className = "mdk";
+      k.textContent = "标签";
+      const v = document.createElement("div");
+      v.className = "mdv";
+      const drawTags = () => {
+        v.innerHTML = "";
+        (o.tags || []).forEach(t => {
+          const c = chip(t);
+          c.title = "点 × 删掉";
+          const x = document.createElement("span");
+          x.textContent = " ×";
+          x.style.opacity = ".55";
+          x.style.cursor = "pointer";
+          x.onclick = (e) => { e.stopPropagation(); o.tags = o.tags.filter(y => y !== t); drawTags(); save(); };
+          c.appendChild(x);
+          v.appendChild(c);
+        });
+        const add = document.createElement("span");
+        add.className = "mdchip";
+        add.style.cursor = "pointer";
+        add.style.color = "var(--acc)";
+        add.style.borderColor = "var(--acc-soft)";
+        add.textContent = "+ 加标签";
+        add.onclick = () => pickTag();
+        v.appendChild(add);
+      };
+      const save = () => { if (o.onSaveTags) o.onSaveTags(o.tags.slice()).catch(() => {}); };
+      const pickTag = () => {
+        const pool = (o.allTags || []).filter(t => (o.tags || []).indexOf(t) < 0);
+        const text = prompt("输入标签（可填新的）" + (pool.length ? "\n现有：" + pool.join("、") : ""), "");
+        if (!text) return;
+        const t = text.trim();
+        if (!t) return;
+        if ((o.tags || []).indexOf(t) >= 0) return;
+        o.tags = (o.tags || []).concat([t]);
+        drawTags();
+        save();
+      };
+      drawTags();
+      row.appendChild(k);
+      row.appendChild(v);
+      rows.appendChild(row);
+    }
     // 自动补几行，免得右边太空白
     const auto = [];
     if (o.meta && o.meta["平台"]) auto.push({ k: "平台", v: [o.meta["平台"]] });
