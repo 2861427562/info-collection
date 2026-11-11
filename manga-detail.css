@@ -1,0 +1,39 @@
+/* 漫画详情层 —— 信息收集页和漫画页共用这一套 */
+#mdroot{position:fixed;inset:0;z-index:120;background:var(--paper);display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#mdroot.on{display:block}
+#mdroot .mdbar{position:sticky;top:0;z-index:121;background:var(--sheet,var(--paper));border-bottom:1px solid var(--line-subtle);
+  display:flex;align-items:center;gap:12px;padding:12px 20px}
+#mdroot .mdbar .t{flex:1;font-family:'Source Serif 4','Noto Serif SC',serif;font-size:.95rem;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mdroot .mdwrap{max-width:960px;margin:0 auto;padding:16px 20px 60px}
+#mdroot .mdtop{display:flex;gap:24px;align-items:flex-start;margin-top:18px}
+#mdroot .mdcover{width:300px;flex:none;aspect-ratio:3/4.2;border:1px solid var(--line);border-radius:2px;
+  overflow:hidden;background:var(--paper-2)}
+#mdroot .mdcover img{width:100%;height:100%;object-fit:cover;display:block}
+#mdroot .mdinfo{flex:1;min-width:0}
+#mdroot .mdinfo h2{font-family:'Source Serif 4','Noto Serif SC',serif;font-size:1.5rem;line-height:1.35;
+  letter-spacing:.02em;margin:0 0 14px;color:var(--ink);word-break:break-word}
+#mdroot .mdtags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+#mdroot .mdtag{font-family:'Noto Sans SC',sans-serif;font-size:.72rem;letter-spacing:.03em;padding:3px 9px;
+  border:1px solid var(--line);border-radius:2px;color:var(--sec)}
+#mdroot .mdtag.acc{border-color:var(--acc-soft);color:var(--acc)}
+#mdroot .mdstat{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--helper);line-height:1.9}
+#mdroot .mdh{display:flex;align-items:center;gap:10px;margin:26px 0 12px;
+  font-family:'Noto Sans SC',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.14em;color:var(--sec)}
+#mdroot .mdh::after{content:"";flex:1;height:1px;background:var(--line-subtle)}
+#mdroot .mdgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+#mdroot .mdcell{aspect-ratio:3/4.2;border:1px solid var(--line);border-radius:2px;overflow:hidden;
+  background:var(--paper-2);cursor:pointer;position:relative;transition:transform .2s,box-shadow .2s}
+#mdroot .mdcell:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(30,24,18,.16)}
+#mdroot .mdcell img{width:100%;height:100%;object-fit:cover;display:block}
+#mdroot .mdn{position:absolute;right:4px;bottom:4px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;background:rgba(20,16,14,.72);color:#f1e8d8;padding:1px 5px;border-radius:2px}
+#mdroot .mdbtn{border:1px solid var(--line-strong);background:transparent;color:var(--sec);
+  border-radius:3px;font-size:.75rem;padding:5px 12px;cursor:pointer;white-space:nowrap}
+#mdroot .mdbtn:hover{border-color:var(--acc);color:var(--acc)}
+#mdroot .mdbtn.primary{background:var(--acc);border-color:var(--acc);color:var(--acc-on)}
+@media (max-width:700px){
+  #mdroot .mdtop{flex-direction:column;gap:16px}
+  #mdroot .mdcover{width:100%;max-width:300px;margin:0 auto}
+  #mdroot .mdgrid{grid-template-columns:repeat(3,1fr)}
+}
