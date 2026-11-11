@@ -212,6 +212,13 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
     <h3>上传一部漫画</h3>
     <label>书名</label>
     <input type="text" id="upName" placeholder="不和信息收集重名的话，会单独出现在书架">
+    <label>平台</label>
+    <select id="upPlat" style="width:100%;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px;padding:8px 10px;font-size:.9rem;outline:none">
+      <option value="pc">pc</option>
+      <option value="安卓">安卓</option>
+      <option value="switch">switch</option>
+      <option value="">不填</option>
+    </select>
     <label>图片（可以多选，按文件名排序）</label>
     <div class="drop" id="drop">把图片拖进来，或者下面选文件</div>
     <input type="file" id="upFiles" accept="image/*" multiple>
@@ -238,7 +245,7 @@ function normWorker(u){
 }
 let WORKER = normWorker(localStorage.getItem("manga_worker_v3") || WORKER_DEFAULT);
 const R2_BASE = "https://img.ygylyp.app";
-const SB_URL = "https://jriobiugqjsejpctzhuj.supabase.co";
+const SB_URL = "https://api.ygylyp.app";
 const SB_KEY = "sb_publishable_X3ZdlVAhNlUouEiEB7HM0g_VHjgcpJ8";
 const SB_H = {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json"};
 const KEY_THEME = "manga_theme";
@@ -494,6 +501,35 @@ upFiles.onchange = () => setFiles(upFiles.files);
 ["dragleave","drop"].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.remove("hot"); }));
 dropEl.addEventListener("drop", e => { if(e.dataTransfer.files.length) setFiles(e.dataTransfer.files); });
 
+function newItemId(){
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return "m-" + Date.now() + "-" + Math.random().toString(16).slice(2, 10);
+}
+
+/* 上传成功后，在「信息收集」里补一条漫画条目（同名不重复建） */
+async function ensureCollectionItem(name, platform){
+  const key = normName(name);
+  if ((COLLECTION || []).some(d => normName(d["名字"] || "") === key)) return { skipped: "exists" };
+  const item = {
+    id: newItemId(),
+    data: {
+      "名字": name, "类型": "漫画", "平台": platform || "pc", "进度": "未看",
+      "年份": "", "标签": [], "游戏分类": "", "作者/社团": "", "评分": 0,
+      "备注": "", "链接": "", "内容": "", "封面": "", "images": [],
+      "_upd": Date.now(),
+    },
+  };
+  const pw = getPass();
+  if (!pw) return { error: "no pass" };
+  const r = await fetch(SB_URL + "/rest/v1/rpc/edit_items", {
+    method: "POST", headers: SB_H,
+    body: JSON.stringify({ pw, op: "upsert", payload: [item] }),
+  });
+  if (!r.ok) return { error: "edit_items " + r.status };
+  COLLECTION.push(item.data);
+  return { ok: true, id: item.id };
+}
+
 async function compress(file){
   const bmp = await createImageBitmap(file);
   const scale = Math.min(1, 900 / bmp.width);
@@ -533,9 +569,10 @@ upStart.onclick = async () => {
     INDEX.series = (INDEX.series || []).filter(s => s.slug !== slug);
     INDEX.series.push({ name, slug, chapters: [{ title: "全一话", count: ok }] });
     await worker("index-put", {}, JSON.stringify({ base: INDEX.base, series: INDEX.series }), "application/json");
+    const added = await ensureCollectionItem(name, (document.getElementById("upPlat") || {}).value || "pc").catch(e => ({ error: String(e) }));
     ROWS = buildRows();
     renderShelf();
-    toast("传完了：" + name);
+    toast("传完了：" + name + (added && added.ok ? "（已加进信息收集）" : ""));
     upPanel.classList.remove("on");
     upQueue = []; upFiles.value = ""; upName.value = "";
     upBar.style.width = "0%";
