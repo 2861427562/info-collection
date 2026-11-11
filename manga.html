@@ -186,6 +186,15 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
   .pgrid{grid-template-columns:repeat(3,1fr)}
 }
 
+/* 标签筛选条 */
+#tagbar{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
+#tagbar .tgbtn{font-family:'Noto Sans SC',sans-serif;font-size:.72rem;letter-spacing:.02em;
+  padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:var(--paper-2);
+  color:var(--sec);cursor:pointer;white-space:nowrap;transition:.15s}
+#tagbar .tgbtn:hover{border-color:var(--acc);color:var(--acc)}
+#tagbar .tgbtn.on{background:var(--acc);border-color:var(--acc);color:var(--acc-on)}
+#tagbar .tgbtn .c{opacity:.55;margin-left:4px;font-family:'IBM Plex Mono',monospace;font-size:.65rem}
+
 @media (max-width:900px){
   .wallgrid{grid-template-columns:repeat(4,1fr)}
   .hright{flex:1 1 100%}
@@ -227,6 +236,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 <div id="view">
   <section class="wall">
     <div class="wallhead"><h2>书架</h2><span class="n" id="stat"></span></div>
+    <div id="tagbar"></div>
     <div class="wallgrid" id="grid"></div>
   </section>
   <div class="empty" id="empty" style="display:none">
@@ -323,6 +333,8 @@ if (EARLY.get("id") || EARLY.get("page")){
 }
 let COLLECTION = [];
 let ROWS = [];
+let TAGS = {};
+let curTag = null;
 let query = "";
 let cur = null, pageEls = [], io = null;
 
@@ -452,6 +464,10 @@ function buildRows(){
     if(used.has(s.slug)) return;
     rows.push({ title: s.name, series: s, cover: pageUrl(s,0,1), done: true, extra: true });
   });
+  rows.forEach(r => {
+    const meta = r.series ? TAGS[r.series.slug] : null;
+    r.tags = meta && meta.tags ? meta.tags : [];
+  });
   rows.sort((a,b) => (b.done - a.done) || a.title.localeCompare(b.title, "zh"));
   return rows;
 }
@@ -465,15 +481,34 @@ function progressOf(s){
   return bestPct >= 0.98 ? 0 : best;
 }
 
+function renderTagBar(){
+  const bar = document.getElementById("tagbar");
+  if(!bar) return;
+  const counts = {};
+  ROWS.forEach(r => (r.tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+  const tags = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
+  bar.innerHTML = "";
+  if(!tags.length) return;
+  tags.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "tgbtn" + (curTag === t ? " on" : "");
+    b.innerHTML = t + '<span class="c">' + counts[t] + '</span>';
+    b.onclick = () => { curTag = (curTag === t ? null : t); renderShelf(); };
+    bar.appendChild(b);
+  });
+}
+
 function renderShelf(){
   const grid = document.getElementById("grid");
   const total = ROWS.length;
   const up = ROWS.filter(r => r.done).length;
-  const list = ROWS.filter(r => !query || r.title.toLowerCase().includes(query));
+  const list = ROWS.filter(r => (!query || r.title.toLowerCase().includes(query))
+                            && (!curTag || (r.tags || []).indexOf(curTag) >= 0));
   document.getElementById("count").textContent = total + " 部";
   document.getElementById("stat").textContent = query ? ("找到 " + list.length + " 部") : ("已上传 " + up + " 部");
   document.getElementById("empty").style.display = total ? "none" : "block";
   grid.innerHTML = "";
+  renderTagBar();
   list.forEach(r => {
     const card = document.createElement("div");
     card.className = "gcard" + (r.done ? "" : " off");
@@ -833,6 +868,7 @@ function openDetail(s, fromHistory){
     meta: { "平台": meta["平台"], "进度": meta["进度"] },
     progress: getProgress(s.slug, 0),
     fields: [
+      (TAGS[s.slug] && TAGS[s.slug].tags && TAGS[s.slug].tags.length) ? { k: "标签", v: TAGS[s.slug].tags } : null,
       (meta["标签"] && meta["标签"].length) ? { k: "标签", v: meta["标签"] } : null,
       meta["作者/社团"] ? { k: "作者", v: [meta["作者/社团"]] } : null,
       meta["年份"] ? { k: "年份", v: [meta["年份"]] } : null,
@@ -845,7 +881,9 @@ function openDetail(s, fromHistory){
 function closeDetail(){ if(window.MangaDetail) window.MangaDetail.close(); curDetail = null; }
 
 /* ========== 启动 ========== */
-Promise.all([loadIndex(), loadCollection().catch(() => [])]).then(([idx, col]) => {
+const _tagsReq = fetch("manga-tags.json?t=" + Date.now(), {cache:"no-store"}).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+Promise.all([loadIndex(), loadCollection().catch(() => []), _tagsReq]).then(([idx, col, tg]) => {
+  TAGS = tg || {};
   INDEX = idx;
   COLLECTION = (col || []).map(r => r.data).filter(d => d && d["类型"] === "漫画");
   ROWS = buildRows();
