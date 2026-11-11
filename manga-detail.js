@@ -123,20 +123,79 @@
         add.style.color = "var(--acc)";
         add.style.borderColor = "var(--acc-soft)";
         add.textContent = "+ 加标签";
-        add.onclick = () => pickTag();
+        add.onclick = () => togglePicker();
         v.appendChild(add);
       };
       const save = () => { if (o.onSaveTags) o.onSaveTags(o.tags.slice()).catch(() => {}); };
-      const pickTag = () => {
-        const pool = (o.allTags || []).filter(t => (o.tags || []).indexOf(t) < 0);
-        const text = prompt("输入标签（可填新的）" + (pool.length ? "\n现有：" + pool.join("、") : ""), "");
-        if (!text) return;
-        const t = text.trim();
-        if (!t) return;
-        if ((o.tags || []).indexOf(t) >= 0) return;
-        o.tags = (o.tags || []).concat([t]);
-        drawTags();
-        save();
+      let picker = null;
+      const togglePicker = () => {
+        if (picker) { picker.remove(); picker = null; return; }
+        picker = buildPicker();
+        row.appendChild(picker);
+      };
+
+      const buildPicker = () => {
+        const box = document.createElement("div");
+        box.className = "mdpicker";
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.placeholder = "搜索标签…（回车可加新标签）";
+        box.appendChild(inp);
+        const list = document.createElement("div");
+        list.className = "mdplist";
+        box.appendChild(list);
+
+        const all = (o.allTags || []).slice();
+        Object.keys(o.tagCounts || {}).forEach(t => { if (all.indexOf(t) < 0) all.push(t); });
+        (o.tags || []).forEach(t => { if (all.indexOf(t) < 0) all.push(t); });
+
+        const render = () => {
+          const q = inp.value.trim().toLowerCase();
+          list.innerHTML = "";
+          all
+            .filter(t => !q || t.toLowerCase().indexOf(q) >= 0)
+            .slice(0, 200)
+            .forEach(t => {
+              const it = document.createElement("div");
+              it.className = "mdpitem";
+              const has = (o.tags || []).indexOf(t) >= 0;
+              const nm = document.createElement("span");
+              nm.className = "mdpn";
+              nm.textContent = t;
+              if (o.tagCounts && o.tagCounts[t]) {
+                const c = document.createElement("span");
+                c.className = "mdpc";
+                c.textContent = o.tagCounts[t];
+                nm.appendChild(c);
+              }
+              const btn = document.createElement("button");
+              btn.className = "mdpbtn";
+              btn.textContent = has ? "✓" : "+";
+              if (has) btn.classList.add("on");
+              btn.onclick = () => {
+                if (has) o.tags = o.tags.filter(x => x !== t);
+                else o.tags = (o.tags || []).concat([t]);
+                drawTags();
+                save();
+                render();
+              };
+              it.appendChild(nm);
+              it.appendChild(btn);
+              list.appendChild(it);
+            });
+        };
+        inp.oninput = render;
+        inp.onkeydown = (e) => {
+          if (e.key !== "Enter") return;
+          const t = inp.value.trim();
+          if (!t) return;
+          if ((o.tags || []).indexOf(t) < 0) { o.tags = (o.tags || []).concat([t]); save(); drawTags(); }
+          inp.value = "";
+          render();
+        };
+        render();
+        setTimeout(() => inp.focus(), 30);
+        return box;
       };
       drawTags();
       row.appendChild(k);
