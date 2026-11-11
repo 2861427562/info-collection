@@ -228,7 +228,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 
 <script>
 /* ========== 配置 ========== */
-const WORKER_DEFAULT = "https://manga-upload.ygylyp.workers.dev";
+const WORKER_DEFAULT = "https://up.ygylyp.app";
 function normWorker(u){
   if(!u) return "";
   u = u.trim().replace(/\/+$/, "");
@@ -236,7 +236,7 @@ function normWorker(u){
   u = u.replace(/^http:\/\//i, "https://");
   return u;
 }
-let WORKER = normWorker(localStorage.getItem("manga_worker_v2") || WORKER_DEFAULT);
+let WORKER = normWorker(localStorage.getItem("manga_worker_v3") || WORKER_DEFAULT);
 const R2_BASE = "https://pub-84db0f3292924614bfb2c03bf14a4e4f.r2.dev";
 const SB_URL = "https://jriobiugqjsejpctzhuj.supabase.co";
 const SB_KEY = "sb_publishable_X3ZdlVAhNlUouEiEB7HM0g_VHjgcpJ8";
@@ -477,7 +477,7 @@ upBtn.onclick = () => {
     const u = prompt("Worker 地址（一般不用改）", WORKER);
     if(!u) return;
     WORKER = normWorker(u);
-    localStorage.setItem("manga_worker_v2", WORKER);
+    localStorage.setItem("manga_worker_v3", WORKER);
   }
   upPanel.classList.add("on");
 };
