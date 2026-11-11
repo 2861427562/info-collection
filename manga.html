@@ -828,6 +828,12 @@ function openDetail(s, fromHistory){
     chapters: s.chapters || [],
     meta: { "平台": meta["平台"], "进度": meta["进度"] },
     progress: getProgress(s.slug, 0),
+    fields: [
+      (meta["标签"] && meta["标签"].length) ? { k: "标签", v: meta["标签"] } : null,
+      meta["作者/社团"] ? { k: "作者", v: [meta["作者/社团"]] } : null,
+      meta["年份"] ? { k: "年份", v: [meta["年份"]] } : null,
+      { k: "页数", v: [String((s.chapters || []).reduce((a, c) => a + c.count, 0))] },
+    ].filter(Boolean),
     onPreview: (page) => { window.MangaDetail.close(); openReader(s, 0, page); },
     onRead: () => { window.MangaDetail.close(); openReader(s, 0); },
   });
