@@ -53,6 +53,9 @@ h1{font-family:'Source Serif 4','Noto Serif SC',serif;font-size:1.6rem;font-weig
 .btn.primary:hover{opacity:.9;color:var(--acc-on)}
 
 body.pending-detail #view{visibility:hidden}
+#boot{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.8rem;letter-spacing:.1em;color:var(--helper)}
+body.pending-detail #boot{display:flex}
 #view{background:var(--sheet);border:1px solid var(--line-subtle);border-top:0;
   border-radius:0 0 3px 3px;max-width:860px;margin:0 auto;padding:0 20px 60px}
 .wallhead{display:flex;align-items:baseline;gap:10px;margin:18px 0 12px}
@@ -218,6 +221,8 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
   </div>
 </header>
 
+<div id="boot"><span>正在打开…</span></div>
+
 <div id="view">
   <section class="wall">
     <div class="wallhead"><h2>书架</h2><span class="n" id="stat"></span></div>
@@ -310,7 +315,10 @@ const KEY_PASS = "manga_pass";
 
 let INDEX = { base: R2_BASE, series: [] };
 const EARLY = new URLSearchParams(location.search);
-if (EARLY.get("id") || EARLY.get("page")) document.body.classList.add("pending-detail");
+if (EARLY.get("id") || EARLY.get("page")){
+  document.body.classList.add("pending-detail");
+  setTimeout(() => document.body.classList.remove("pending-detail"), 8000);
+}
 let COLLECTION = [];
 let ROWS = [];
 let query = "";
