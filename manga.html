@@ -314,21 +314,27 @@ function withTimeout(url, ms){
   return fetch(url, {cache:"no-store", signal: ctl.signal}).finally(() => clearTimeout(t));
 }
 async function loadIndex(){
-  // 1) 同源 manga.json：国内不用翻墙、最快
+  // 三个来源都试，能读到几份就合并几份（按 slug 去重）
+  const sources = [];
   try{
     const r = await fetch("manga.json?t=" + Date.now(), {cache:"no-store"});
-    if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
+    if(r.ok) sources.push(await r.json());
   }catch(e){}
-  // 2) Worker（挂了梯子才通，2.5 秒超时就放弃）
-  try{
-    const r = await withTimeout(WORKER + "/index.json?t=" + Date.now(), 2500);
-    if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
-  }catch(e){}
-  // 3) R2 直连
-  try{
-    const r = await withTimeout(R2_BASE + "/index.json?t=" + Date.now(), 2500);
-    if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
-  }catch(e){}
+  const [w, r2] = await Promise.allSettled([
+    withTimeout(WORKER + "/index.json?t=" + Date.now(), 2500).then(r => r.ok ? r.json() : null),
+    withTimeout(R2_BASE + "/index.json?t=" + Date.now(), 2500).then(r => r.ok ? r.json() : null)
+  ]);
+  if(w.status === "fulfilled" && w.value) sources.push(w.value);
+  if(r2.status === "fulfilled" && r2.value) sources.push(r2.value);
+
+  const map = new Map();
+  let base = R2_BASE;
+  sources.forEach(j => {
+    if(!j || !Array.isArray(j.series)) return;
+    if(j.base) base = j.base;
+    j.series.forEach(s => { if(s && s.slug && !map.has(s.slug)) map.set(s.slug, s); });
+  });
+  if(map.size) return { base, series: [...map.values()] };
   try{
     const r = await fetch("manga.json?t=" + Date.now(), {cache:"no-store"});
     if(r.ok){ const j = await r.json(); j.base = j.base || R2_BASE; return j; }
