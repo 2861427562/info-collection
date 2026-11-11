@@ -1,8 +1,9 @@
-/* 漫画详情层 —— 两个页面共用
-   用法：
+/* 漫画详情层 —— 信息收集页和漫画页共用
    MangaDetail.open({
-     name, slug, base, chapters:[{title,count}], meta:{平台,进度}, progress,   // progress: 上次读到第几页
-     onPreview(page), onRead()      // 不传就默认跳 manga.html
+     name, slug, base, chapters:[{title,count}],
+     meta:{平台,进度}, progress,
+     fields:[{k:'标签', v:['a','b']}, {k:'作者', v:['xxx']}, ...],
+     onPreview(page), onRead()
    })
 */
 (function(){
@@ -21,7 +22,12 @@
       '<div class="mdwrap">' +
         '<div class="mdtop">' +
           '<div class="mdcover"><img alt="" referrerpolicy="no-referrer"></div>' +
-          '<div class="mdinfo"><h2></h2><div class="mdtags"></div><div class="mdstat"></div></div>' +
+          '<div class="mdinfo">' +
+            '<h2></h2>' +
+            '<div class="mdtags"></div>' +
+            '<div class="mdstat"></div>' +
+            '<div class="mdrows"></div>' +
+          '</div>' +
         '</div>' +
         '<div class="mdh">全部预览</div>' +
         '<div class="mdgrid"></div>' +
@@ -36,16 +42,18 @@
     return o.base.replace(/\/+$/, "") + "/m/" + o.slug + "/00/" + String(i).padStart(4, "0") + ".webp";
   }
 
+  function chip(text, cls){
+    const sp = document.createElement("span");
+    sp.className = "mdchip" + (cls ? " " + cls : "");
+    sp.textContent = text;
+    return sp;
+  }
+
   function open(opts){
-    const o = Object.assign({
-      base: "https://img.ygylyp.app",
-      onRead: null,
-      onPreview: null,
-    }, opts);
+    const o = Object.assign({ base: "https://img.ygylyp.app", onRead: null, onPreview: null, fields: [] }, opts);
     cur = o;
     const r = ensure();
     const total = (o.chapters || []).reduce((a, c) => a + (c.count || 0), 0);
-    o._total = total;
 
     r.querySelector(".mdbar .t").textContent = o.name;
     r.querySelector("h2").textContent = o.name;
@@ -54,23 +62,36 @@
     cover.src = pageUrl(o, 1);
     cover.onerror = () => { cover.removeAttribute("src"); };
 
-    const tags = [];
-    tags.push(["漫画", "acc"]);
-    if (o.meta && o.meta["平台"]) tags.push([o.meta["平台"], ""]);
-    if (o.meta && o.meta["进度"]) tags.push([o.meta["进度"], ""]);
-    if ((o.chapters || []).length > 1) tags.push([o.chapters.length + " 话", ""]);
+    // 顶部小标签（类型 / 平台 / 进度）
     const tw = r.querySelector(".mdtags");
     tw.innerHTML = "";
-    tags.forEach(([t, cls]) => {
-      const sp = document.createElement("span");
-      sp.className = "mdtag" + (cls ? " " + cls : "");
-      sp.textContent = t;
-      tw.appendChild(sp);
-    });
+    tw.appendChild(chip("漫画", "acc"));
+    if (o.meta && o.meta["平台"]) tw.appendChild(chip(o.meta["平台"]));
+    if (o.meta && o.meta["进度"]) tw.appendChild(chip(o.meta["进度"]));
+    if ((o.chapters || []).length > 1) tw.appendChild(chip(o.chapters.length + " 话"));
 
     const p = o.progress || 0;
     r.querySelector(".mdstat").textContent = total + " 页" + (p > 1 ? " · 上次读到第 " + p + " 页" : " · 还没开始读");
 
+    // 信息表（仿 nhentai 那种 key: chips）
+    const rows = r.querySelector(".mdrows");
+    rows.innerHTML = "";
+    const list = (o.fields || []).filter(f => f && f.v && f.v.length);
+    list.forEach(f => {
+      const row = document.createElement("div");
+      row.className = "mdrow";
+      const k = document.createElement("div");
+      k.className = "mdk";
+      k.textContent = f.k;
+      const v = document.createElement("div");
+      v.className = "mdv";
+      f.v.forEach(x => v.appendChild(chip(x)));
+      row.appendChild(k);
+      row.appendChild(v);
+      rows.appendChild(row);
+    });
+
+    // 全部预览
     const grid = r.querySelector(".mdgrid");
     grid.innerHTML = "";
     for (let i = 1; i <= total; i++){
@@ -94,7 +115,6 @@
     r.scrollTop = 0;
     document.documentElement.style.overflow = "hidden";
     if (o.onRead == null) {
-      // 默认"开始阅读"跳到阅读器第一页
       o.onRead = () => { location.href = "manga.html?id=" + encodeURIComponent(o.slug); };
     }
   }
