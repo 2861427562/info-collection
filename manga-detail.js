@@ -94,7 +94,15 @@
     // 信息表（仿 nhentai 那种 key: chips）
     const rows = r.querySelector(".mdrows");
     rows.innerHTML = "";
-    const list = (o.fields || []).filter(f => f && f.v && f.v.length);
+    // 自动补几行，免得右边太空白
+    const auto = [];
+    if (o.meta && o.meta["平台"]) auto.push({ k: "平台", v: [o.meta["平台"]] });
+    if (o.meta && o.meta["进度"]) auto.push({ k: "进度", v: [o.meta["进度"]] });
+    auto.push({ k: "页数", v: [String(total)] });
+    if ((o.chapters || []).length > 1) auto.push({ k: "话数", v: [String(o.chapters.length)] });
+    const has = new Set((o.fields || []).map(f => f && f.k));
+    const merged = auto.filter(f => !has.has(f.k)).concat(o.fields || []);
+    const list = merged.filter(f => f && f.v && f.v.length);
     list.forEach(f => {
       const row = document.createElement("div");
       row.className = "mdrow";
