@@ -308,14 +308,25 @@ async function loadCollection(){
   }
   return all;
 }
+function withTimeout(url, ms){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, {cache:"no-store", signal: ctl.signal}).finally(() => clearTimeout(t));
+}
 async function loadIndex(){
-  // 目录优先问 Worker（不受 R2 跨域限制），再退回 R2 直连、本地 manga.json
+  // 1) 同源 manga.json：国内不用翻墙、最快
   try{
-    const r = await fetch(WORKER + "/index.json?t=" + Date.now(), {cache:"no-store"});
+    const r = await fetch("manga.json?t=" + Date.now(), {cache:"no-store"});
     if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
   }catch(e){}
+  // 2) Worker（挂了梯子才通，2.5 秒超时就放弃）
   try{
-    const r = await fetch(R2_BASE + "/index.json?t=" + Date.now(), {cache:"no-store"});
+    const r = await withTimeout(WORKER + "/index.json?t=" + Date.now(), 2500);
+    if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
+  }catch(e){}
+  // 3) R2 直连
+  try{
+    const r = await withTimeout(R2_BASE + "/index.json?t=" + Date.now(), 2500);
     if(r.ok){ const j = await r.json(); if(Array.isArray(j.series)) { j.base = j.base || R2_BASE; return j; } }
   }catch(e){}
   try{
