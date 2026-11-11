@@ -38,7 +38,19 @@
 #mdroot .mdv{flex:1;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
 #mdroot .mdchip{font-family:'Noto Sans SC',sans-serif;font-size:.72rem;letter-spacing:.02em;padding:3px 9px;
   border:1px solid var(--line);border-radius:2px;color:var(--sec);background:var(--paper-2);white-space:nowrap}
-#mdroot .mdchip.acc{background:transparent;border-color:var(--acc-soft);color:var(--acc)}@media (max-width:700px){
+#mdroot .mdchip.acc{background:transparent;border-color:var(--acc-soft);color:var(--acc)}#mdroot .mdrow > .mdpicker{flex:1 1 100%;margin-top:8px}
+#mdroot .mdpicker{margin:8px 0 4px;border:1px solid var(--line);border-radius:3px;background:var(--paper);overflow:hidden}
+#mdroot .mdpicker input{width:100%;border:0;border-bottom:1px solid var(--line-subtle);background:transparent;
+  padding:8px 10px;font-size:.8rem;color:var(--ink);outline:none;font-family:'Noto Sans SC',sans-serif}
+#mdroot .mdplist{max-height:220px;overflow-y:auto}
+#mdroot .mdpitem{display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--line-subtle)}
+#mdroot .mdpitem:last-child{border-bottom:0}
+#mdroot .mdpn{flex:1;font-size:.78rem;color:var(--body)}
+#mdroot .mdpc{margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--helper)}
+#mdroot .mdpbtn{flex:none;width:26px;height:24px;border:1px solid var(--line);border-radius:2px;background:transparent;
+  color:var(--acc);font-size:.85rem;line-height:1;cursor:pointer}
+#mdroot .mdpbtn:hover{border-color:var(--acc);background:var(--acc);color:var(--acc-on)}
+#mdroot .mdpbtn.on{background:var(--acc);border-color:var(--acc);color:var(--acc-on)}@media (max-width:700px){
   #mdroot .mdtop{flex-direction:column;gap:16px}
   #mdroot .mdcover{width:100%;max-width:300px;margin:0 auto}
   #mdroot .mdgrid{grid-template-columns:repeat(3,1fr)}
