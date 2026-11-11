@@ -191,7 +191,7 @@ html[data-theme="night"] .bgfx .grain-lit{opacity:.22;mix-blend-mode:screen}
 .detail .sec textarea:focus{border-color:var(--acc)}
 .detail .sec .row2{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .detail .sec button{border:1px solid var(--line-strong);background:transparent;color:var(--ink);padding:6px 14px;border-radius:3px;cursor:pointer;font-size:.8125rem}
-.detail .sec a.btnlink{display:inline-block;background:var(--acc);color:var(--acc-on);padding:7px 16px;border-radius:3px;text-decoration:none;font-size:.8125rem;font-weight:600}
+.expand a.btnlink,.detail .sec a.btnlink{display:inline-block;background:var(--acc);color:var(--acc-on);padding:7px 16px;border-radius:3px;text-decoration:none;font-size:.8125rem;font-weight:600}
 .imwrap{position:relative;display:inline-block}
 .imwrap .ctl{position:absolute;left:0;right:0;bottom:0;display:flex;gap:2px;justify-content:center;background:rgba(31,26,20,.55);padding:2px}
 .imwrap .ctl button{border:none;background:transparent;color:#fff;font-size:11px;cursor:pointer;padding:2px 5px}
@@ -1032,7 +1032,7 @@ function refresh(){
       const t = ev.target;
       if(t && (t.classList.contains("nm") || t.classList.contains("thumb"))){
         const mg0 = (d["类型"] === "漫画") ? mangaMatch(d["名字"] || "") : null;
-        if(mg0){ location.href = "manga.html?id=" + encodeURIComponent(mg0.slug); return; }
+        if(mg0){ openDetail(d); return; }
       }
       if(div.classList.contains("shifted")){
         div.classList.remove("shifted");
