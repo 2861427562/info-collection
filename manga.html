@@ -742,7 +742,11 @@ function buildPages(startPage){
     img.loading = "lazy"; img.referrerPolicy = "no-referrer"; img.alt = "";
     img.onload = () => { wrap.className = ""; wrap.style.aspectRatio = "auto"; if(i === restorePage) wrap.scrollIntoView({block:"start"}); };
     img.onerror = () => { img.remove(); };
-    img.src = pageUrl(cur.series, cur.ci, i);
+    const _hosts = ["https://img.ygylyp.app", "https://pub-84db0f3292924614bfb2c03bf14a4e4f.r2.dev"];
+    const _path = "/m/" + cur.series.slug + "/" + String(cur.ci).padStart(2,"0") + "/" + String(i).padStart(4,"0") + ".webp";
+    let _hi = 0;
+    img.onerror = () => { _hi++; if(_hi < _hosts.length){ img.src = _hosts[_hi] + _path; } else { img.remove(); } };
+    img.src = _hosts[0] + _path;
     wrap.appendChild(img);
     box.appendChild(wrap);
     pageEls.push(wrap);
