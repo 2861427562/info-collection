@@ -146,6 +146,42 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 #toast button{border:0;background:transparent;color:var(--acc);font-size:.82rem;cursor:pointer;
   text-decoration:underline;text-underline-offset:3px}
 
+/* 详情页 */
+#detail{position:fixed;inset:0;z-index:55;background:var(--paper);display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#detail.on{display:block}
+.dwrap{max-width:960px;margin:0 auto;padding:16px 20px 60px}
+.dbar{position:sticky;top:0;z-index:56;background:var(--sheet);border-bottom:1px solid var(--line-subtle);
+  display:flex;align-items:center;gap:12px;padding:12px 20px}
+.dbar .t{flex:1;font-family:'Source Serif 4','Noto Serif SC',serif;font-size:.95rem;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtop{display:flex;gap:24px;align-items:flex-start;margin-top:18px}
+.dcover{width:300px;flex:none;aspect-ratio:3/4.2;border:1px solid var(--line);border-radius:2px;
+  overflow:hidden;background:var(--paper-2)}
+.dcover img{width:100%;height:100%;object-fit:cover;display:block}
+.dinfo{flex:1;min-width:0}
+.dinfo h2{font-family:'Source Serif 4','Noto Serif SC',serif;font-size:1.5rem;line-height:1.35;
+  letter-spacing:.02em;margin:0 0 14px;color:var(--ink);word-break:break-word}
+.dtags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.dtag{font-family:'Noto Sans SC',sans-serif;font-size:.72rem;letter-spacing:.03em;padding:3px 9px;
+  border:1px solid var(--line);border-radius:2px;color:var(--sec)}
+.dtag.acc{border-color:var(--acc-soft);color:var(--acc)}
+.dstat{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--helper);margin-bottom:20px;line-height:1.9}
+.dprevh{display:flex;align-items:center;gap:10px;margin:26px 0 12px;
+  font-family:'Noto Sans SC',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.14em;color:var(--sec)}
+.dprevh::after{content:"";flex:1;height:1px;background:var(--line-subtle)}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.pgrid .pitem{aspect-ratio:3/4.2;border:1px solid var(--line);border-radius:2px;overflow:hidden;
+  background:var(--paper-2);cursor:pointer;position:relative;transition:transform .2s,box-shadow .2s}
+.pgrid .pitem:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(30,24,18,.16)}
+.pgrid .pitem img{width:100%;height:100%;object-fit:cover;display:block}
+.pgrid .pitem .n{position:absolute;right:4px;bottom:4px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;background:rgba(20,16,14,.7);color:#f1e8d8;padding:1px 5px;border-radius:2px}
+@media (max-width:700px){
+  .dtop{flex-direction:column;gap:16px}
+  .dcover{width:100%;max-width:300px;margin:0 auto}
+  .pgrid{grid-template-columns:repeat(3,1fr)}
+}
+
 @media (max-width:900px){
   .wallgrid{grid-template-columns:repeat(4,1fr)}
   .hright{flex:1 1 100%}
@@ -191,6 +227,26 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
       <div class="emptyTitle">书架还空着</div>
       <div class="emptyHint">点右上角「上传」，选图片就能传上来。<br>传完这一页会自己更新。</div>
     </div>
+  </div>
+</div>
+
+<div id="detail">
+  <div class="dbar">
+    <button class="btn" id="dback">←</button>
+    <span class="t" id="dtitle"></span>
+    <button class="btn primary" id="dread">开始阅读</button>
+  </div>
+  <div class="dwrap">
+    <div class="dtop">
+      <div class="dcover"><img id="dcoverimg" alt="" referrerpolicy="no-referrer"></div>
+      <div class="dinfo">
+        <h2 id="dname"></h2>
+        <div class="dtags" id="dtags"></div>
+        <div class="dstat" id="dstat"></div>
+      </div>
+    </div>
+    <div class="dprevh">预览</div>
+    <div class="pgrid" id="dpreview"></div>
   </div>
 </div>
 
@@ -431,7 +487,7 @@ function renderShelf(){
     }
     const nm = document.createElement("div"); nm.className = "gname"; nm.textContent = r.title;
     card.appendChild(cov); card.appendChild(nm);
-    card.onclick = () => r.done ? openReader(r.series, 0) : toast("这一部还没上传");
+    card.onclick = () => r.done ? openDetail(r.series) : toast("这一部还没上传");
     grid.appendChild(card);
   });
 }
@@ -582,23 +638,90 @@ upStart.onclick = async () => {
   upStart.disabled = false;
 };
 
+/* ========== 详情页 ========== */
+let curDetail = null;
+
+function openDetail(s, fromHistory){
+  curDetail = s;
+  const d = document.getElementById("detail");
+  d.classList.add("on");
+  d.scrollTop = 0;
+  document.body.style.overflow = "hidden";
+
+  const total = s.chapters.reduce((a,c)=>a+c.count, 0);
+  document.getElementById("dtitle").textContent = s.name;
+  document.getElementById("dname").textContent = s.name;
+
+  const img = document.getElementById("dcoverimg");
+  img.src = pageUrl(s, 0, 1);
+  img.onerror = () => { img.removeAttribute("src"); };
+
+  const tags = [];
+  tags.push(["漫画", "acc"]);
+  const meta = (COLLECTION || []).find(x => normName(x["名字"]) === normName(s.name));
+  if (meta && meta["平台"]) tags.push([meta["平台"], ""]);
+  if (meta && meta["进度"]) tags.push([meta["进度"], ""]);
+  if (s.chapters.length > 1) tags.push([s.chapters.length + " 话", ""]);
+  const el = document.getElementById("dtags");
+  el.innerHTML = "";
+  tags.forEach(([t, cls]) => {
+    const sp = document.createElement("span");
+    sp.className = "dtag" + (cls ? " " + cls : "");
+    sp.textContent = t;
+    el.appendChild(sp);
+  });
+
+  const p = progressOf(s);
+  document.getElementById("dstat").textContent =
+    total + " 页" + (p > 1 ? " · 上次读到第 " + p + " 页" : " · 还没开始读");
+
+  // 预览 5 页
+  const box = document.getElementById("dpreview");
+  box.innerHTML = "";
+  const n = Math.min(5, total);
+  for (let i = 2; i <= n + 1 && i <= total; i++){
+    const item = document.createElement("div");
+    item.className = "pitem";
+    const im = document.createElement("img");
+    im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.alt = "";
+    im.src = pageUrl(s, 0, i);
+    item.appendChild(im);
+    const badge = document.createElement("span");
+    badge.className = "n"; badge.textContent = i;
+    item.appendChild(badge);
+    item.onclick = () => openReader(s, 0, i);
+    box.appendChild(item);
+  }
+
+  if (!fromHistory) history.pushState({ detail: s.slug }, "");
+}
+
+function closeDetail(){
+  document.getElementById("detail").classList.remove("on");
+  document.body.style.overflow = "";
+  curDetail = null;
+}
+
+document.getElementById("dback").onclick = () => { closeDetail(); history.back(); };
+document.getElementById("dread").onclick = () => { if (curDetail) openReader(curDetail, 0); };
+
 /* ========== 阅读器 ========== */
-function openReader(s, ci){
+function openReader(s, ci, startPage){
   cur = { series: s, ci };
   const r = document.getElementById("reader");
   r.classList.add("on"); r.scrollTop = 0;
   document.body.style.overflow = "hidden";
   document.getElementById("rname").textContent = s.name + (s.chapters.length > 1 ? " · " + s.chapters[ci].title : "");
   document.getElementById("chapBtn").style.display = s.chapters.length > 1 ? "" : "none";
-  buildPages();
+  buildPages(startPage);
   history.pushState({ reader: true }, "");
 }
-function buildPages(){
+function buildPages(startPage){
   const box = document.getElementById("pages");
   box.innerHTML = ""; pageEls = [];
   const ch = cur.series.chapters[cur.ci];
   const saved = getProgress(cur.series.slug, cur.ci);
-  const restorePage = (saved > 1 && saved <= ch.count) ? saved : 0;
+  const restorePage = startPage ? Math.min(startPage, ch.count) : ((saved > 1 && saved <= ch.count) ? saved : 0);
   for(let i = 1; i <= ch.count; i++){
     const wrap = document.createElement("div");
     wrap.className = "ph"; wrap.dataset.page = i;
@@ -685,6 +808,11 @@ Promise.all([loadIndex(), loadCollection().catch(() => [])]).then(([idx, col]) =
   COLLECTION = (col || []).map(r => r.data).filter(d => d && d["类型"] === "漫画");
   ROWS = buildRows();
   renderShelf();
+  const wantId = new URLSearchParams(location.search).get("id");
+  if(wantId){
+    const row = ROWS.find(r => r.done && r.series.slug === wantId);
+    if(row) setTimeout(() => openDetail(row.series, true), 80);
+  }
   const want = new URLSearchParams(location.search).get("read");
   if(want){
     const row = ROWS.find(r => r.done && r.series.slug === want);
