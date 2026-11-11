@@ -598,6 +598,10 @@ let MANGA_MAP = null;
 fetch("manga.json?t=" + Date.now(), { cache: "no-store" })
   .then(r => r.json())
   .then(j => {
+    fetch("manga-tags.json?t=" + Date.now(), { cache: "no-store" })
+      .then(r => r.ok ? r.json() : {})
+      .then(j => { window.__mangaTags = j || {}; })
+      .catch(() => { window.__mangaTags = {}; });
     MANGA_MAP = new Map();
     window.__mangaBase = (j.base || "https://img.ygylyp.app").replace(/\/+$/, "");
     (j.series || []).forEach(s => { MANGA_MAP.set(normName(s.name), s); });
@@ -606,6 +610,35 @@ fetch("manga.json?t=" + Date.now(), { cache: "no-store" })
 function normName(s){
   return (s || "").toLowerCase().replace(/[\s\[\]【】()（）「」『』·・_\-—~～!！?？,，.。:：;；'"“”]/g, "");
 }
+const KNOWN_TAGS = ["纯爱","NTR","寝取","出轨","后宫","百合","伪娘","近亲","女仆","JK","OL","人妻","萝莉","正太","御姐","师生","偶像","兽耳","巨乳","贫乳","黑皮","双马尾","眼镜","短发","同人志","商业志","短篇","全彩","无修正","调教","凌辱","催眠","监禁","露出","多人","触手","怀孕","魔法少女","异世界","日常","搞笑","黑暗","剧情向"];
+const MANGA_WORKER = "https://up.ygylyp.app";
+
+async function saveMangaTags(slug, name, tags){
+  if(!window.__mangaTags) window.__mangaTags = {};
+  window.__mangaTags[slug] = { name: name, tags: tags };
+  const pw = PW_EDIT;
+  if(!pw) return false;
+  try{
+    const r = await fetch(MANGA_WORKER + "?act=tags-put", {
+      method: "POST",
+      headers: { "x-pass": pw, "content-type": "application/json" },
+      body: JSON.stringify(window.__mangaTags)
+    });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+function mangaTagsOf(slug, name){
+  const m = window.__mangaTags;
+  if(!m) return [];
+  if(m[slug] && m[slug].tags) return m[slug].tags;
+  const key = normName(name);
+  for(const k in m){
+    if(m[k] && m[k].name && normName(m[k].name) === key && m[k].tags) return m[k].tags;
+  }
+  return [];
+}
+
 function mangaFields(d){
   const out = [];
   const push = (k, v, fn) => {
@@ -866,6 +899,10 @@ function expandNode(d){
           base: window.__mangaBase || "https://img.ygylyp.app",
           chapters: __mg.chapters || [],
           meta: { "平台": d["平台"], "进度": d["进度"] },
+          editableTags: true,
+          tags: mangaTagsOf(__mg.slug, __mg.name || d["名字"]).slice(),
+          allTags: KNOWN_TAGS,
+          onSaveTags: (tags) => saveMangaTags(__mg.slug, __mg.name || d["名字"], tags),
           fields: mangaFields(d),
         });
       }
@@ -1112,6 +1149,10 @@ function openDetail(d){
         chapters: mgGo.chapters || [],
         meta: { "平台": d["平台"], "进度": d["进度"] },
         progress: 0,
+        editableTags: true,
+        tags: mangaTagsOf(mgGo.slug, mgGo.name || d["名字"]).slice(),
+        allTags: KNOWN_TAGS,
+        onSaveTags: (tags) => saveMangaTags(mgGo.slug, mgGo.name || d["名字"], tags),
         fields: mangaFields(d),
       });
       return;
