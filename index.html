@@ -1979,6 +1979,19 @@ async function boot(){
       document.getElementById("count").textContent="读取中…";
     }
   }
+  // 先把同源静态快照铺上去（国内不用翻墙也能秒出），再去云端校正
+  try{
+    const r = await fetch("list.json?t=" + Date.now(), {cache:"no-store"});
+    if(r.ok){
+      const j = await r.json();
+      if(j && Array.isArray(j.items) && j.items.length){
+        DATA = j.items.map(o => { const d = normItem(o.data || {}); d._id = o.id; return d; });
+        refresh();
+        setStatus("busy", "更新云端…");
+      }
+    }
+  }catch(e){}
+
   try{
     const rows=await loadCloud();
     if(rows && rows.length){
