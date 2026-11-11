@@ -1003,6 +1003,11 @@ function refresh(){
         if(div.parentElement) div.parentElement.classList.remove("open");
         return;
       }
+      // 已上传的漫画：点这一行直接进漫画详情页
+      if(d["类型"] === "漫画"){
+        const mg = mangaMatch(d["名字"] || "");
+        if(mg){ location.href = "manga.html?id=" + encodeURIComponent(mg.slug); return; }
+      }
       if(state.multi) toggleSel(d); else toggleOpen(d);
     };
     div.ondblclick=e=>{ e.stopPropagation(); openDetail(d); };
@@ -1106,7 +1111,7 @@ function renderDetail(d){
   if(mg){
     const a = document.createElement("a");
     a.className = "btnlink";
-    a.href = "manga.html?read=" + encodeURIComponent(mg.slug);
+    a.href = "manga.html?id=" + encodeURIComponent(mg.slug);
     a.textContent = "在漫画页阅读 ↗";
     a.style.marginLeft = "8px";
     links.appendChild(a);
