@@ -52,6 +52,7 @@ h1{font-family:'Source Serif 4','Noto Serif SC',serif;font-size:1.6rem;font-weig
 .btn.primary{background:var(--acc);border-color:var(--acc);color:var(--acc-on)}
 .btn.primary:hover{opacity:.9;color:var(--acc-on)}
 
+body.pending-detail #view{visibility:hidden}
 #view{background:var(--sheet);border:1px solid var(--line-subtle);border-top:0;
   border-radius:0 0 3px 3px;max-width:860px;margin:0 auto;padding:0 20px 60px}
 .wallhead{display:flex;align-items:baseline;gap:10px;margin:18px 0 12px}
@@ -308,6 +309,8 @@ const KEY_THEME = "manga_theme";
 const KEY_PASS = "manga_pass";
 
 let INDEX = { base: R2_BASE, series: [] };
+const EARLY = new URLSearchParams(location.search);
+if (EARLY.get("id") || EARLY.get("page")) document.body.classList.add("pending-detail");
 let COLLECTION = [];
 let ROWS = [];
 let query = "";
@@ -816,8 +819,10 @@ Promise.all([loadIndex(), loadCollection().catch(() => [])]).then(([idx, col]) =
     if(row){
       if(wantPage > 0) setTimeout(() => openReader(row.series, 0, wantPage), 80);
       else setTimeout(() => openDetail(row.series, true), 80);
+      return;
     }
   }
+  document.body.classList.remove("pending-detail");
   const want = new URLSearchParams(location.search).get("read");
   if(want){
     const row = ROWS.find(r => r.done && r.series.slug === want);
