@@ -1128,7 +1128,11 @@ function renderDetail(d){
   const hero=document.getElementById("d-hero");
   if(hero){
     const ci=hero.querySelector("img");
-    if(d["封面"]){ ci.src=d["封面"]; hero.style.display="block"; }
+    let src = d["封面"] || "";
+    if(!src && _mg && window.__mangaBase){
+      src = window.__mangaBase + "/m/" + _mg.slug + "/00/0001.webp";
+    }
+    if(src){ ci.src=src; hero.style.display="block"; }
     else { ci.removeAttribute("src"); hero.style.display="none"; }
   }
   const viewerWrap=document.getElementById("d-viewerwrap");
