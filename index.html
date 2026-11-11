@@ -822,6 +822,16 @@ function expandNode(d){
   });
   if(d["评分"]){ any=true; addRow("评分", starStr(d["评分"])); }
   if(d["备注"]){ any=true; addRow("备注", d["备注"]); }
+  const __mg = (d["类型"] === "漫画") ? mangaMatch(d["名字"] || "") : null;
+  if(__mg){
+    const a = document.createElement("a");
+    a.className = "btnlink";
+    a.href = "manga.html?id=" + encodeURIComponent(__mg.slug);
+    a.textContent = "阅读这部漫画 ↗";
+    a.style.marginTop = "10px";
+    a.style.display = "inline-block";
+    panel.appendChild(a);
+  }
   if(d["标签"] && d["标签"].length){
     any=true;
     const tl=document.createElement("div"); tl.className="tagline";
@@ -1002,11 +1012,6 @@ function refresh(){
         div.classList.remove("shifted");
         if(div.parentElement) div.parentElement.classList.remove("open");
         return;
-      }
-      // 已上传的漫画：点这一行直接进漫画详情页
-      if(d["类型"] === "漫画"){
-        const mg = mangaMatch(d["名字"] || "");
-        if(mg){ location.href = "manga.html?id=" + encodeURIComponent(mg.slug); return; }
       }
       if(state.multi) toggleSel(d); else toggleOpen(d);
     };
