@@ -197,6 +197,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
   #view{padding:0 14px 40px}
 }
 </style>
+<link rel="stylesheet" href="manga-detail.css">
 </head>
 <body>
 <header id="hdr">
@@ -295,6 +296,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 
 <div id="toast"><span id="toastText"></span><button id="toastUndo" style="display:none">撤销</button></div>
 
+<script src="manga-detail.js"></script>
 <script>
 /* ========== 配置 ========== */
 const WORKER_DEFAULT = "https://up.ygylyp.app";
@@ -812,6 +814,25 @@ document.getElementById("chapters").onclick = e => { if(e.target.id === "chapter
 
 const qEl = document.getElementById("q");
 qEl.addEventListener("input", () => { query = qEl.value.trim().toLowerCase(); renderShelf(); });
+
+/* ========== 详情页（用共用组件，和「信息收集」同一套） ========== */
+function openDetail(s, fromHistory){
+  curDetail = s;
+  const meta = (COLLECTION || []).find(x => normName(x["名字"]) === normName(s.name)) || {};
+  if(fromHistory === undefined) fromHistory = false;
+  if(!fromHistory) history.pushState({ detail: s.slug }, "");
+  window.MangaDetail.open({
+    name: s.name,
+    slug: s.slug,
+    base: INDEX.base || R2_BASE,
+    chapters: s.chapters || [],
+    meta: { "平台": meta["平台"], "进度": meta["进度"] },
+    progress: getProgress(s.slug, 0),
+    onPreview: (page) => { window.MangaDetail.close(); openReader(s, 0, page); },
+    onRead: () => { window.MangaDetail.close(); openReader(s, 0); },
+  });
+}
+function closeDetail(){ if(window.MangaDetail) window.MangaDetail.close(); curDetail = null; }
 
 /* ========== 启动 ========== */
 Promise.all([loadIndex(), loadCollection().catch(() => [])]).then(([idx, col]) => {
