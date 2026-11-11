@@ -337,8 +337,10 @@ header.collapsed{padding:8px 0 10px}.back{color:var(--acc);cursor:pointer;font-f
   .trash{right:8px;bottom:64px;width:40px;height:40px}
 }
 </style>
+<link rel="stylesheet" href="manga-detail.css">
 </head>
 <body class="ro">
+<script src="manga-detail.js"></script>
 <div class="bgfx" id="bgfx"><span class="grain"></span><span class="grain-lit"></span><span class="glow"></span></div>
 <div class="ripple-layer" id="rippleLayer"></div>
 <div class="split" id="split"><div class="pane l"></div><div class="pane r"></div><span class="seam" id="seam"></span></div>
@@ -834,10 +836,21 @@ function expandNode(d){
   if(__mg){
     const a = document.createElement("a");
     a.className = "btnlink";
-    a.href = "manga.html?id=" + encodeURIComponent(__mg.slug);
-    a.textContent = "阅读这部漫画 ↗";
+    a.href = "javascript:void(0)";
+    a.textContent = "阅读这部漫画 →";
     a.style.marginTop = "10px";
     a.style.display = "inline-block";
+    a.onclick = (e) => {
+      e.stopPropagation();
+      if(window.MangaDetail){
+        window.MangaDetail.open({
+          name: __mg.name || d["名字"], slug: __mg.slug,
+          base: window.__mangaBase || "https://img.ygylyp.app",
+          chapters: __mg.chapters || [],
+          meta: { "平台": d["平台"], "进度": d["进度"] },
+        });
+      }
+    };
     panel.appendChild(a);
   }
   if(d["标签"] && d["标签"].length){
@@ -1069,10 +1082,20 @@ function goList(){
 window.addEventListener("popstate", ()=>{ showList(); window.scrollTo(0,0); });
 
 function openDetail(d){
-  // 漫画类且已经上传过：直接进漫画详情页
+  // 漫画类且已经上传过：就地弹出共用详情层（不跳页、无过渡）
   if(d["类型"] === "漫画"){
     const mgGo = mangaMatch(d["名字"] || "");
-    if(mgGo){ location.href = "manga.html?id=" + encodeURIComponent(mgGo.slug); return; }
+    if(mgGo && window.MangaDetail){
+      window.MangaDetail.open({
+        name: mgGo.name || d["名字"],
+        slug: mgGo.slug,
+        base: window.__mangaBase || "https://img.ygylyp.app",
+        chapters: mgGo.chapters || [],
+        meta: { "平台": d["平台"], "进度": d["进度"] },
+        progress: 0,
+      });
+      return;
+    }
   }
   curIdx = DATA.indexOf(d);
   imgIdx = 0;
