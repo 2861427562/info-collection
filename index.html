@@ -606,6 +606,24 @@ fetch("manga.json?t=" + Date.now(), { cache: "no-store" })
 function normName(s){
   return (s || "").toLowerCase().replace(/[\s\[\]【】()（）「」『』·・_\-—~～!！?？,，.。:：;；'"“”]/g, "");
 }
+function mangaFields(d){
+  const out = [];
+  const push = (k, v, fn) => {
+    if(!v) return;
+    const arr = Array.isArray(v) ? v.filter(Boolean) : [fn ? fn(v) : v].filter(Boolean);
+    if(arr.length) out.push({ k, v: arr });
+  };
+  push("标签", d["标签"]);
+  push("作者", d["作者/社团"]);
+  push("分类", d["游戏分类"]);
+  push("年份", d["年份"]);
+  push("评分", d["评分"], v => "★".repeat(v));
+  push("链接", d["链接"] ? ["有外部链接"] : []);
+  if(d["_upd"]) push("更新", [new Date(d["_upd"]).toISOString().slice(0,10)]);
+  push("备注", d["备注"] ? [d["备注"]] : []);
+  return out;
+}
+
 function mangaMatch(name){
   if(!MANGA_MAP) return null;
   const key = normName(name);
@@ -848,6 +866,7 @@ function expandNode(d){
           base: window.__mangaBase || "https://img.ygylyp.app",
           chapters: __mg.chapters || [],
           meta: { "平台": d["平台"], "进度": d["进度"] },
+          fields: mangaFields(d),
         });
       }
     };
@@ -1093,6 +1112,7 @@ function openDetail(d){
         chapters: mgGo.chapters || [],
         meta: { "平台": d["平台"], "进度": d["进度"] },
         progress: 0,
+        fields: mangaFields(d),
       });
       return;
     }
