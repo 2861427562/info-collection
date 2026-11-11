@@ -206,7 +206,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
   #view{padding:0 14px 40px}
 }
 </style>
-<link rel="stylesheet" href="manga-detail.css?v=7">
+<link rel="stylesheet" href="manga-detail.css?v=8">
 </head>
 <body>
 <header id="hdr">
@@ -292,6 +292,11 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
       <option value="switch">switch</option>
       <option value="">不填</option>
     </select>
+    <label>标签（可不选）</label>
+    <div id="upTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px"></div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input type="text" id="upTagInput" placeholder="打一个标签按回车" style="flex:1;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px;padding:6px 8px;font-size:.82rem;outline:none">
+    </div>
     <label>图片（可以多选，按文件名排序）</label>
     <div class="drop" id="drop">把图片拖进来，或者下面选文件</div>
     <input type="file" id="upFiles" accept="image/*" multiple>
@@ -306,7 +311,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 
 <div id="toast"><span id="toastText"></span><button id="toastUndo" style="display:none">撤销</button></div>
 
-<script src="manga-detail.js?v=7"></script>
+<script src="manga-detail.js?v=8"></script>
 <script>
 /* ========== 配置 ========== */
 const WORKER_DEFAULT = "https://up.ygylyp.app";
@@ -588,6 +593,26 @@ async function commitDelete(s){
 
 /* ========== 上传 ========== */
 let upQueue = [];
+let upTags = [];
+
+function renderUpTags(){
+  const box = document.getElementById("upTags");
+  if(!box) return;
+  box.innerHTML = "";
+  upTags.forEach(t => {
+    const c = document.createElement("span");
+    c.style.cssText = "font-size:.72rem;padding:3px 9px;border:1px solid var(--acc-soft);border-radius:2px;color:var(--acc);cursor:pointer";
+    c.textContent = t + " ×";
+    c.onclick = () => { upTags = upTags.filter(x => x !== t); renderUpTags(); };
+    box.appendChild(c);
+  });
+  if(!upTags.length){
+    const hint = document.createElement("span");
+    hint.style.cssText = "font-size:.72rem;color:var(--helper)";
+    hint.textContent = "还没选；下面输入或从常用里挑";
+    box.appendChild(hint);
+  }
+}
 const upBtn = document.getElementById("upBtn");
 const upPanel = document.getElementById("up");
 const upFiles = document.getElementById("upFiles");
@@ -614,6 +639,18 @@ function setFiles(list){
   upState.textContent = upQueue.length ? (upQueue.length + " 页，第 1 页：" + upQueue[0].name) : "待选择";
   upStart.disabled = !upQueue.length;
 }
+const upTagInput = document.getElementById("upTagInput");
+if (upTagInput) {
+  upTagInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const t = upTagInput.value.trim();
+    if (!t) return;
+    if (upTags.indexOf(t) < 0) { upTags.push(t); renderUpTags(); }
+    upTagInput.value = "";
+  });
+}
+renderUpTags();
+
 upFiles.onchange = () => setFiles(upFiles.files);
 ["dragenter","dragover"].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.add("hot"); }));
 ["dragleave","drop"].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.remove("hot"); }));
@@ -687,12 +724,27 @@ upStart.onclick = async () => {
     INDEX.series = (INDEX.series || []).filter(s => s.slug !== slug);
     INDEX.series.push({ name, slug, chapters: [{ title: "全一话", count: ok }] });
     await worker("index-put", {}, JSON.stringify({ base: INDEX.base, series: INDEX.series }), "application/json");
+    // 顺手把标签存下来
+    if (upTags.length) {
+      TAGS[slug] = { name: name, tags: upTags.slice() };
+      try {
+        const pass = getPass();
+        if (pass) {
+          await fetch(WORKER + "?act=tags-put", {
+            method: "POST",
+            headers: { "x-pass": pass, "content-type": "application/json" },
+            body: JSON.stringify(TAGS),
+          });
+        }
+      } catch (e) {}
+    }
     const added = await ensureCollectionItem(name, (document.getElementById("upPlat") || {}).value || "pc").catch(e => ({ error: String(e) }));
     ROWS = buildRows();
     renderShelf();
     toast("传完了：" + name + (added && added.ok ? "（已加进信息收集）" : ""));
     upPanel.classList.remove("on");
     upQueue = []; upFiles.value = ""; upName.value = "";
+    upTags = []; renderUpTags();
     upBar.style.width = "0%";
   }catch(e){
     toast("目录更新失败：" + e.message);
@@ -933,6 +985,8 @@ Promise.all([loadIndex(), loadCollection().catch(() => []), _tagsReq]).then(([id
   ROWS = buildRows();
   renderShelf();
   const params = new URLSearchParams(location.search);
+  const wantTag = params.get("tag");
+  if(wantTag) curTag = wantTag;
   const wantId = params.get("id");
   const wantPage = parseInt(params.get("page") || "0", 10);
   if(wantId){
