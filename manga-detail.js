@@ -96,6 +96,7 @@
     rows.innerHTML = "";
 
     // 标签行（可编辑，前提是传了 editableTags）
+    let editing = false;
     if (o.editableTags) {
       const row = document.createElement("div");
       row.className = "mdrow";
@@ -108,13 +109,22 @@
         v.innerHTML = "";
         (o.tags || []).forEach(t => {
           const c = chip(t);
-          c.title = "点 × 删掉";
-          const x = document.createElement("span");
-          x.textContent = " ×";
-          x.style.opacity = ".55";
-          x.style.cursor = "pointer";
-          x.onclick = (e) => { e.stopPropagation(); o.tags = o.tags.filter(y => y !== t); drawTags(); save(); };
-          c.appendChild(x);
+          if (editing) {
+            c.title = "点 × 删掉";
+            const x = document.createElement("span");
+            x.textContent = " ×";
+            x.style.opacity = ".55";
+            x.style.cursor = "pointer";
+            x.onclick = (e) => { e.stopPropagation(); o.tags = o.tags.filter(y => y !== t); drawTags(); save(); };
+            c.appendChild(x);
+          } else {
+            c.style.cursor = "pointer";
+            c.title = "点这里筛出带「" + t + "」的漫画";
+            c.onclick = (e) => {
+              e.stopPropagation();
+              if (o.onTagClick) o.onTagClick(t);
+            };
+          }
           v.appendChild(c);
         });
         const add = document.createElement("span");
@@ -129,9 +139,11 @@
       const save = () => { if (o.onSaveTags) o.onSaveTags(o.tags.slice()).catch(() => {}); };
       let picker = null;
       const togglePicker = () => {
-        if (picker) { picker.remove(); picker = null; return; }
+        if (picker) { picker.remove(); picker = null; editing = false; drawTags(); return; }
+        editing = true;
         picker = buildPicker();
         row.appendChild(picker);
+        drawTags();
       };
 
       const buildPicker = () => {
