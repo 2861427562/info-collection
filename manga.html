@@ -808,10 +808,15 @@ Promise.all([loadIndex(), loadCollection().catch(() => [])]).then(([idx, col]) =
   COLLECTION = (col || []).map(r => r.data).filter(d => d && d["类型"] === "漫画");
   ROWS = buildRows();
   renderShelf();
-  const wantId = new URLSearchParams(location.search).get("id");
+  const params = new URLSearchParams(location.search);
+  const wantId = params.get("id");
+  const wantPage = parseInt(params.get("page") || "0", 10);
   if(wantId){
     const row = ROWS.find(r => r.done && r.series.slug === wantId);
-    if(row) setTimeout(() => openDetail(row.series, true), 80);
+    if(row){
+      if(wantPage > 0) setTimeout(() => openReader(row.series, 0, wantPage), 80);
+      else setTimeout(() => openDetail(row.series, true), 80);
+    }
   }
   const want = new URLSearchParams(location.search).get("read");
   if(want){
