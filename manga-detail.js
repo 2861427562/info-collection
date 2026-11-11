@@ -23,7 +23,7 @@
           '<div class="mdcover"><img alt="" referrerpolicy="no-referrer"></div>' +
           '<div class="mdinfo"><h2></h2><div class="mdtags"></div><div class="mdstat"></div></div>' +
         '</div>' +
-        '<div class="mdh">预览</div>' +
+        '<div class="mdh">全部预览</div>' +
         '<div class="mdgrid"></div>' +
       '</div>';
     document.body.appendChild(root);
@@ -73,8 +73,7 @@
 
     const grid = r.querySelector(".mdgrid");
     grid.innerHTML = "";
-    const n = Math.min(5, Math.max(0, total - 1));
-    for (let i = 2; i <= n + 1; i++){
+    for (let i = 1; i <= total; i++){
       const cell = document.createElement("div");
       cell.className = "mdcell";
       const im = document.createElement("img");
