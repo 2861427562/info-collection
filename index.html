@@ -1069,6 +1069,11 @@ function goList(){
 window.addEventListener("popstate", ()=>{ showList(); window.scrollTo(0,0); });
 
 function openDetail(d){
+  // 漫画类且已经上传过：直接进漫画详情页
+  if(d["类型"] === "漫画"){
+    const mgGo = mangaMatch(d["名字"] || "");
+    if(mgGo){ location.href = "manga.html?id=" + encodeURIComponent(mgGo.slug); return; }
+  }
   curIdx = DATA.indexOf(d);
   imgIdx = 0;
   pushView("detail");
