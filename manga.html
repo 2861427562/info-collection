@@ -206,7 +206,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
   #view{padding:0 14px 40px}
 }
 </style>
-<link rel="stylesheet" href="manga-detail.css?v=3">
+<link rel="stylesheet" href="manga-detail.css?v=4">
 </head>
 <body>
 <header id="hdr">
@@ -306,7 +306,7 @@ html[data-theme="night"] .pages img{background:#0b0a0c}
 
 <div id="toast"><span id="toastText"></span><button id="toastUndo" style="display:none">撤销</button></div>
 
-<script src="manga-detail.js?v=3"></script>
+<script src="manga-detail.js?v=4"></script>
 <script>
 /* ========== 配置 ========== */
 const WORKER_DEFAULT = "https://up.ygylyp.app";
@@ -324,6 +324,7 @@ const SB_KEY = "sb_publishable_X3ZdlVAhNlUouEiEB7HM0g_VHjgcpJ8";
 const SB_H = {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json"};
 const KEY_THEME = "manga_theme";
 const KEY_PASS = "manga_pass";
+const KNOWN_TAGS = ["纯爱","NTR","寝取","出轨","后宫","百合","伪娘","近亲","女仆","JK","OL","人妻","萝莉","正太","御姐","师生","偶像","兽耳","巨乳","贫乳","黑皮","双马尾","眼镜","短发","同人志","商业志","短篇","全彩","无修正","调教","凌辱","催眠","监禁","露出","多人","触手","怀孕","魔法少女","异世界","日常","搞笑","黑暗","剧情向"];
 
 let INDEX = { base: R2_BASE, series: [] };
 const EARLY = new URLSearchParams(location.search);
@@ -466,7 +467,12 @@ function buildRows(){
   });
   rows.forEach(r => {
     const meta = r.series ? TAGS[r.series.slug] : null;
-    r.tags = meta && meta.tags ? meta.tags : [];
+    let t = meta && meta.tags ? meta.tags : null;
+    if (!t) {
+      const byName = TAGS[normName(r.title)];
+      if (byName && byName.tags) t = byName.tags;
+    }
+    r.tags = t || [];
   });
   rows.sort((a,b) => (b.done - a.done) || a.title.localeCompare(b.title, "zh"));
   return rows;
@@ -488,7 +494,15 @@ function renderTagBar(){
   ROWS.forEach(r => (r.tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
   const tags = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
   bar.innerHTML = "";
-  if(!tags.length) return;
+  if(!tags.length){
+    const hint = document.createElement("div");
+    hint.style.fontSize = ".72rem";
+    hint.style.color = "var(--helper)";
+    hint.style.fontFamily = "'IBM Plex Mono',monospace";
+    hint.textContent = "还没有带标签的书——在详情页里可以自己加";
+    bar.appendChild(hint);
+    return;
+  }
   tags.forEach(t => {
     const b = document.createElement("button");
     b.className = "tgbtn" + (curTag === t ? " on" : "");
@@ -867,9 +881,23 @@ function openDetail(s, fromHistory){
     chapters: s.chapters || [],
     meta: { "平台": meta["平台"], "进度": meta["进度"] },
     progress: getProgress(s.slug, 0),
+    editableTags: true,
+    tags: ((TAGS[s.slug] && TAGS[s.slug].tags) ? TAGS[s.slug].tags : (meta["标签"] || [])).slice(),
+    allTags: KNOWN_TAGS,
+    onSaveTags: async (tags) => {
+      TAGS[s.slug] = { name: s.name, tags };
+      const pass = getPass();
+      if (!pass) return;
+      try {
+        await fetch(WORKER + "?act=tags-put", {
+          method: "POST",
+          headers: { "x-pass": pass, "content-type": "application/json" },
+          body: JSON.stringify(TAGS),
+        });
+      } catch (e) {}
+      ROWS = buildRows(); renderShelf();
+    },
     fields: [
-      (TAGS[s.slug] && TAGS[s.slug].tags && TAGS[s.slug].tags.length) ? { k: "标签", v: TAGS[s.slug].tags } : null,
-      (meta["标签"] && meta["标签"].length) ? { k: "标签", v: meta["标签"] } : null,
       meta["作者/社团"] ? { k: "作者", v: [meta["作者/社团"]] } : null,
       meta["年份"] ? { k: "年份", v: [meta["年份"]] } : null,
       { k: "页数", v: [String((s.chapters || []).reduce((a, c) => a + c.count, 0))] },
@@ -884,6 +912,11 @@ function closeDetail(){ if(window.MangaDetail) window.MangaDetail.close(); curDe
 const _tagsReq = fetch("manga-tags.json?t=" + Date.now(), {cache:"no-store"}).then(r => r.ok ? r.json() : {}).catch(() => ({}));
 Promise.all([loadIndex(), loadCollection().catch(() => []), _tagsReq]).then(([idx, col, tg]) => {
   TAGS = tg || {};
+  // 再建一份 名字→标签 的索引（manga-tags.json 里每条都带 name）
+  Object.keys(TAGS).forEach(k => {
+    const rec = TAGS[k];
+    if (rec && rec.name) TAGS[normName(rec.name)] = rec;
+  });
   INDEX = idx;
   COLLECTION = (col || []).map(r => r.data).filter(d => d && d["类型"] === "漫画");
   ROWS = buildRows();
