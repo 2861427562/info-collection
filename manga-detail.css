@@ -32,7 +32,13 @@
   border-radius:3px;font-size:.75rem;padding:5px 12px;cursor:pointer;white-space:nowrap}
 #mdroot .mdbtn:hover{border-color:var(--acc);color:var(--acc)}
 #mdroot .mdbtn.primary{background:var(--acc);border-color:var(--acc);color:var(--acc-on)}
-@media (max-width:700px){
+#mdroot .mdrows{margin-top:18px}
+#mdroot .mdrow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+#mdroot .mdk{flex:0 0 52px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.06em;color:var(--helper)}
+#mdroot .mdv{flex:1;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+#mdroot .mdchip{font-family:'Noto Sans SC',sans-serif;font-size:.72rem;letter-spacing:.02em;padding:3px 9px;
+  border:1px solid var(--line);border-radius:2px;color:var(--sec);background:var(--paper-2);white-space:nowrap}
+#mdroot .mdchip.acc{background:transparent;border-color:var(--acc-soft);color:var(--acc)}@media (max-width:700px){
   #mdroot .mdtop{flex-direction:column;gap:16px}
   #mdroot .mdcover{width:100%;max-width:300px;margin:0 auto}
   #mdroot .mdgrid{grid-template-columns:repeat(3,1fr)}
