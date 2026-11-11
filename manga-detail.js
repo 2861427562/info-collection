@@ -38,8 +38,27 @@
     return root;
   }
 
+  const FALLBACK = "https://pub-84db0f3292924614bfb2c03bf14a4e4f.r2.dev";
+
+  function pagePath(o, i){
+    return "/m/" + o.slug + "/00/" + String(i).padStart(4, "0") + ".webp";
+  }
+
   function pageUrl(o, i){
-    return o.base.replace(/\/+$/, "") + "/m/" + o.slug + "/00/" + String(i).padStart(4, "0") + ".webp";
+    return o.base.replace(/\/+$/, "") + pagePath(o, i);
+  }
+
+  // 主域名失败就换备用域名再试一次
+  function loadImg(img, o, i){
+    const hosts = [o.base.replace(/\/+$/, "")];
+    if (hosts[0] !== FALLBACK) hosts.push(FALLBACK);
+    let n = 0;
+    img.onerror = () => {
+      n++;
+      if (n < hosts.length) img.src = hosts[n] + pagePath(o, i);
+      else { img.onerror = null; img.removeAttribute("src"); }
+    };
+    img.src = hosts[0] + pagePath(o, i);
   }
 
   function chip(text, cls){
@@ -59,8 +78,7 @@
     r.querySelector("h2").textContent = o.name;
 
     const cover = r.querySelector(".mdcover img");
-    cover.src = pageUrl(o, 1);
-    cover.onerror = () => { cover.removeAttribute("src"); };
+    loadImg(cover, o, 1);
 
     // 顶部小标签（类型 / 平台 / 进度）
     const tw = r.querySelector(".mdtags");
@@ -99,7 +117,7 @@
       cell.className = "mdcell";
       const im = document.createElement("img");
       im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.alt = "";
-      im.src = pageUrl(o, i);
+      loadImg(im, o, i);
       cell.appendChild(im);
       const badge = document.createElement("span");
       badge.className = "mdn"; badge.textContent = i;
